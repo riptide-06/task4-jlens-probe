@@ -1,0 +1,9 @@
+# Qwen3 support landed in transformers 4.51.0 — this is a hard floor.
+transformers>=4.51.0
+accelerate>=0.34
+torch>=2.1
+# 4-bit / 8-bit loading (T4-class GPUs). Skip if you always run bf16.
+bitsandbytes>=0.43
+# analyze_results.py only
+pandas>=2.0
+matplotlib>=3.7
