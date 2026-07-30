@@ -1,0 +1,29 @@
+# --- Python -----------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+venv/
+.venv/
+
+# --- macOS ------------------------------------------------------------------
+.DS_Store
+
+# --- Large raw probe artefacts ----------------------------------------------
+# Every run writes two heavyweight files (10-60 MB each):
+#   records.jsonl  full per-example detail incl. the per-depth top-k vocabulary
+#   heads.csv      one row per (example, layer, head)
+# Both are regenerable from the tracked config.json, so they stay out of git.
+#
+# Deliberately still TRACKED, because they are small and are what reproducibility
+# and the analysis notebooks actually need:
+#   config.json         exact flags + resolved precision + jlens_mode_used
+#   examples.csv        one row per example
+#   layers.csv          one row per (example, layer)
+#   depth_profile.png   the headline figure
+outputs/**/records.jsonl
+outputs/**/heads.csv
+
+# Local scratch runs: prefix a run directory with "_" to keep it untracked.
+outputs/_*/
