@@ -1,0 +1,45 @@
+{
+  "config": {
+    "jsonl": "data/staleness_5k.jsonl",
+    "out_dir": "outputs/colab_run_qwen_5k_L5-8-13",
+    "limit": null,
+    "shuffle": false,
+    "seed": 0,
+    "filter_compression": null,
+    "filter_entity_type": null,
+    "filter_level": null,
+    "model_id": "Qwen/Qwen2.5-7B-Instruct",
+    "load_in": "bf16",
+    "device_map": "auto",
+    "attn_impl": "eager",
+    "max_prompt_tokens": 8192,
+    "prompt_format": "chat",
+    "enable_thinking": false,
+    "answer_template": "{subject} is currently in the",
+    "raw_answer_lead": "\n\nAnswer: ",
+    "target_mode": "prefill",
+    "max_new_tokens": 24,
+    "jlens_mode": "autograd",
+    "jlens_baseline": "zero",
+    "jlens_eps": 0.05,
+    "layers": [
+      5,
+      8,
+      13
+    ],
+    "top_k": 10,
+    "capture_attention": true,
+    "dump_heads": true,
+    "self_check": false,
+    "dry_run": false,
+    "verbose": true
+  },
+  "run": {
+    "n_examples": 5000,
+    "precision": "bf16",
+    "jlens_mode_used": "autograd",
+    "elapsed_sec": 2884.3,
+    "torch": "2.11.0+cu128",
+    "transformers": "5.14.1"
+  }
+}
