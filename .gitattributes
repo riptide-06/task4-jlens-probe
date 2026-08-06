@@ -1,0 +1,13 @@
+# Probe artefacts must round-trip byte-for-byte.
+#
+# Python's csv module emits CRLF per RFC 4180, and this machine has
+# core.autocrlf=input, which would strip those CRs on commit and rewrite the
+# working copy on checkout. For research outputs that people checksum against
+# the original Colab download, that silently corrupts the artefact.
+# `-text` disables all end-of-line conversion and stores the bytes as-is.
+*.csv       -text
+*.jsonl     -text
+
+# Binary: never diff, never convert.
+*.png       binary
+*.ipynb     -text
