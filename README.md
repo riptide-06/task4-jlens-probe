@@ -3,7 +3,7 @@
 **Team:** tommy-hjra · Algoverse AI Research, Summer 2026
 **Axis:** 2 — State Tracking and Belief Update in Long-Horizon Tasks
 
-Mechanistic-interpretability pipeline that reads Qwen3-8B's internal activations at the
+Mechanistic-interpretability pipeline that reads Qwen2.5-7B-Instruct internal activations at the
 moment it answers *"what room is the object in now?"* and asks whether the **correct,
 updated** room is decodable inside the network **even on the trials where the model emits
 the stale room**.
