@@ -1,4 +1,4 @@
-# Task 4 — J-Lens Stale-State Probe for Qwen3-8B
+# Task 4 — J-Lens Stale-State Probe for Qwen2.5-7B-Instruct
 
 **Team:** tommy-hjra · Algoverse AI Research, Summer 2026
 **Axis:** 2 — State Tracking and Belief Update in Long-Horizon Tasks
