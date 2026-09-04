@@ -1,0 +1,493 @@
+
+==============================================================================
+SCHEMA / df.columns (reported before any analysis, as requested)
+==============================================================================
+
+[A] outputs/colab_run_qwen_failures_fullsweep/layers.csv
+    shape: (3973, 37)
+    df.columns:
+       0. example_id
+       1. dataset_index
+       2. layer
+       3. compression
+       4. entity_type
+       5. complexity_level
+       6. distractor_position
+       7. n_distractors
+       8. outcome
+       9. output_is_stale
+      10. correct_state
+      11. stale_state
+      12. logitlens_rank_correct
+      13. logitlens_rank_stale
+      14. logitlens_score_correct
+      15. logitlens_score_stale
+      16. logitlens_p_correct
+      17. logitlens_p_stale
+      18. logitlens_margin
+      19. logitlens_top1_token
+      20. jlens_rank_correct
+      21. jlens_rank_stale
+      22. jlens_score_correct
+      23. jlens_score_stale
+      24. jlens_p_correct
+      25. jlens_p_stale
+      26. jlens_margin
+      27. jlens_top1_token
+      28. attn_correct_mass
+      29. attn_stale_mass
+      30. attn_correct_update_mass
+      31. attn_stale_anchor_mass
+      32. attn_correct_minus_stale
+      33. attn_max_head_correct
+      34. attn_max_head_stale
+      35. attn_argmax_head_correct
+      36. attn_entropy
+
+[B] outputs/colab_run_qwen_fullsweep_500/layers.csv
+    shape: (14500, 37)
+    identical column set to [A]: True
+
+==============================================================================
+DATASET SHAPE SANITY
+==============================================================================
+
+failures_fullsweep:
+  rows=3973  examples=137  layers=29 (layer ids 0..28)
+  rows per example: [np.int64(29)]
+  outcome (row-level): {'stale': 3973}
+  outcome (example-level): {'stale': 137}
+  rank NaNs: logitlens/correct=0, logitlens/stale=0, jlens/correct=0, jlens/stale=0
+
+fullsweep_500:
+  rows=14500  examples=500  layers=29 (layer ids 0..28)
+  rows per example: [np.int64(29)]
+  outcome (row-level): {'correct': 14152, 'stale': 348}
+  outcome (example-level): {'correct': 488, 'stale': 12}
+  rank NaNs: logitlens/correct=0, logitlens/stale=0, jlens/correct=0, jlens/stale=0
+
+  observed max rank + 1 (vocab-size lower bound): 152,065
+  layers used for the max: 29
+
+==============================================================================
+CONTROL 1 -- SYMMETRY
+==============================================================================
+
+Question: in what fraction of failures does the STALE room outrank the CORRECT
+room in at least one layer? If that is also ~100%, the original statistic is
+vacuous -- it just says 'somewhere in 29 layers the ordering flips', which any
+two noisy rank series will satisfy.
+
+------------------------------------------------------------------------------
+LENS: logitlens
+------------------------------------------------------------------------------
+
+  failures_fullsweep (137 stale failures)  (n=137 examples)
+    correct outranks stale in >=1 layer : 137/137 = 100.0%   <- the original claim
+    stale   outranks correct in >=1 layer: 137/137 = 100.0%   <- symmetry control
+    BOTH directions occur in same example: 137/137 = 100.0%
+    median # layers correct wins: 9.0 / 29   |  median # layers stale wins: 20.0
+
+  fullsweep_500 :: FAILURES  (n=12 examples)
+    correct outranks stale in >=1 layer : 12/12 = 100.0%   <- the original claim
+    stale   outranks correct in >=1 layer: 12/12 = 100.0%   <- symmetry control
+    BOTH directions occur in same example: 12/12 = 100.0%
+    median # layers correct wins: 7.5 / 29   |  median # layers stale wins: 21.5
+
+  fullsweep_500 :: SUCCESSES  (n=488 examples)
+    correct outranks stale in >=1 layer : 488/488 = 100.0%   <- the original claim
+    stale   outranks correct in >=1 layer: 468/488 =  95.9%   <- symmetry control
+    BOTH directions occur in same example: 468/488 =  95.9%
+    median # layers correct wins: 19.0 / 29   |  median # layers stale wins: 10.0
+------------------------------------------------------------------------------
+LENS: jlens
+------------------------------------------------------------------------------
+
+  failures_fullsweep (137 stale failures)  (n=137 examples)
+    correct outranks stale in >=1 layer : 137/137 = 100.0%   <- the original claim
+    stale   outranks correct in >=1 layer: 137/137 = 100.0%   <- symmetry control
+    BOTH directions occur in same example: 137/137 = 100.0%
+    median # layers correct wins: 8.0 / 29   |  median # layers stale wins: 21.0
+
+  fullsweep_500 :: FAILURES  (n=12 examples)
+    correct outranks stale in >=1 layer : 12/12 = 100.0%   <- the original claim
+    stale   outranks correct in >=1 layer: 12/12 = 100.0%   <- symmetry control
+    BOTH directions occur in same example: 12/12 = 100.0%
+    median # layers correct wins: 9.5 / 29   |  median # layers stale wins: 18.5
+
+  fullsweep_500 :: SUCCESSES  (n=488 examples)
+    correct outranks stale in >=1 layer : 488/488 = 100.0%   <- the original claim
+    stale   outranks correct in >=1 layer: 488/488 = 100.0%   <- symmetry control
+    BOTH directions occur in same example: 488/488 = 100.0%
+    median # layers correct wins: 23.0 / 29   |  median # layers stale wins: 6.0
+
+==============================================================================
+CONTROL 2 -- DISCRIMINATION (successes vs failures)
+==============================================================================
+
+Question: does 'correct outranks stale in >=1 layer' also hit ~100% on the
+SUCCESS records? If yes, the statistic does not separate failure from success
+and cannot support the claim as written.
+
+------------------------------------------------------------------------------
+LENS: logitlens
+------------------------------------------------------------------------------
+
+  group                          n    correct wins >=1 layer   mean #layers won
+  fullsweep_500 SUCCESSES      488                  100.0%               18.0
+  fullsweep_500 FAILURES        12                  100.0%               12.0
+  137-failure run              137                  100.0%               10.9
+
+  Delta (failures - successes) on the >=1-layer statistic: +0.0 pp
+
+  Graded alternative -- # layers (of 29) where correct outranks stale:
+    fullsweep_500 SUCCESSES    mean= 18.0  median=19.0  IQR=[11, 25]
+    fullsweep_500 FAILURES     mean= 12.0  median= 7.5  IQR=[5, 22]
+    137-failure run            mean= 10.9  median= 9.0  IQR=[5, 16]
+------------------------------------------------------------------------------
+LENS: jlens
+------------------------------------------------------------------------------
+
+  group                          n    correct wins >=1 layer   mean #layers won
+  fullsweep_500 SUCCESSES      488                  100.0%               21.4
+  fullsweep_500 FAILURES        12                  100.0%                9.2
+  137-failure run              137                  100.0%                8.4
+
+  Delta (failures - successes) on the >=1-layer statistic: +0.0 pp
+
+  Graded alternative -- # layers (of 29) where correct outranks stale:
+    fullsweep_500 SUCCESSES    mean= 21.4  median=23.0  IQR=[20, 25]
+    fullsweep_500 FAILURES     mean=  9.2  median= 9.5  IQR=[7, 11]
+    137-failure run            mean=  8.4  median= 8.0  IQR=[5, 11]
+
+==============================================================================
+CONTROL 3 -- MAGNITUDE (absolute ranks at the best-margin layer)
+==============================================================================
+
+Question: when the correct room 'outranks' the stale room, what are the ABSOLUTE
+ranks? Winning at rank 47,000 vs 60,000 is not evidence the correct answer is
+represented; both are buried. This also reconciles the two reported figures
+(mean best rank 47,343 vs 2.3) -- see the reconciliation block below.
+
+Definition: per example, pick the layer maximising margin = rank_stale - rank_correct
+(the layer where correct wins by the largest margin), then report (rank_correct,
+rank_stale) there. 'best rank' = min over layers of rank_correct.
+
+Chance baseline: for a rank uniform on [0, V) drawn independently at each of the
+29 layers, E[min] ~ (V-1)/(n_layers+1).
+
+  V (vocab lower bound) = 152,065   ->   chance E[best-of-29 rank] ~ 5,069
+
+------------------------------------------------------------------------------
+LENS: logitlens
+------------------------------------------------------------------------------
+
+  failures_fullsweep (137 stale failures)  (n=137)
+    At the best-margin layer:
+      rank_correct: mean=    28,276  median=    24,183  IQR=[   10,823,    38,623]  min=      22  max=    83,117
+      rank_stale  : mean=    98,038  median=   103,440  IQR=[   77,023,   124,245]  min=  15,598  max=   149,108
+      margin     : mean=    69,762  median=    72,246
+    Best (min over layers) rank_correct: mean=         2  median=         2
+      examples whose BEST rank_correct <=     1: 15/137 =  10.9%
+      examples whose BEST rank_correct <=    10: 136/137 =  99.3%
+      examples whose BEST rank_correct <=   100: 137/137 = 100.0%
+      examples whose BEST rank_correct <= 1,000: 137/137 = 100.0%
+      examples whose BEST rank_correct is WORSE than chance (5,069): 0/137 =   0.0%
+
+  fullsweep_500 :: FAILURES  (n=12)
+    At the best-margin layer:
+      rank_correct: mean=    24,282  median=    18,991  IQR=[   14,565,    27,372]  min=   5,921  max=    66,499
+      rank_stale  : mean=    88,435  median=    92,761  IQR=[   63,804,   118,228]  min=  24,767  max=   135,878
+      margin     : mean=    64,152  median=    61,196
+    Best (min over layers) rank_correct: mean=         2  median=         2
+      examples whose BEST rank_correct <=     1: 3/12 =  25.0%
+      examples whose BEST rank_correct <=    10: 12/12 = 100.0%
+      examples whose BEST rank_correct <=   100: 12/12 = 100.0%
+      examples whose BEST rank_correct <= 1,000: 12/12 = 100.0%
+      examples whose BEST rank_correct is WORSE than chance (5,069): 0/12 =   0.0%
+
+  fullsweep_500 :: SUCCESSES  (n=488)
+    At the best-margin layer:
+      rank_correct: mean=    20,122  median=    13,624  IQR=[    4,784,    27,716]  min=       1  max=   103,440
+      rank_stale  : mean=   100,289  median=   113,054  IQR=[   75,768,   129,453]  min=      10  max=   149,718
+      margin     : mean=    80,166  median=    87,340
+    Best (min over layers) rank_correct: mean=         1  median=         1
+      examples whose BEST rank_correct <=     1: 488/488 = 100.0%
+      examples whose BEST rank_correct <=    10: 488/488 = 100.0%
+      examples whose BEST rank_correct <=   100: 488/488 = 100.0%
+      examples whose BEST rank_correct <= 1,000: 488/488 = 100.0%
+      examples whose BEST rank_correct is WORSE than chance (5,069): 0/488 =   0.0%
+
+  Depth breakdown [logitlens] -- median rank_correct and %% of examples with rank_correct<=10:
+    layer |   FAIL med  FAIL<=10 |   SUCC med  SUCC<=10
+        0 |     68,323      0.0% |     98,691      0.0%
+        1 |     44,520      0.0% |     42,984      0.0%
+        2 |     40,196      0.0% |     32,350      0.0%
+        3 |     29,513      0.0% |     31,473      0.0%
+        4 |     40,713      0.0% |     36,882      0.0%
+        5 |     62,012      0.0% |     49,946      0.0%
+        6 |     66,685      0.0% |     56,406      0.0%
+        7 |     51,727      0.0% |     61,862      0.0%
+        8 |     67,166      0.0% |     58,586      0.0%
+        9 |    103,809      0.0% |     69,942      0.0%
+       10 |     74,822      0.0% |     48,770      0.0%
+       11 |     83,949      0.0% |     55,196      0.0%
+       12 |    106,987      0.0% |     43,781      0.0%
+       13 |     92,757      0.0% |     56,906      0.0%
+       14 |    103,169      0.0% |     77,542      0.0%
+       15 |     96,028      0.0% |     55,536      0.0%
+       16 |    108,229      0.0% |     44,378      0.0%
+       17 |    124,536      0.0% |     45,234      0.0%
+       18 |     84,857      0.0% |     50,758      0.0%
+       19 |     55,575      0.0% |     40,346      0.0%
+       20 |     40,603      0.0% |     29,292      0.0%
+       21 |     42,369      0.0% |     31,910      0.0%
+       22 |     33,851      0.0% |     31,499      0.0%
+       23 |      7,505      0.0% |      2,265      2.3%
+       24 |      3,177     11.7% |        146     20.5%
+       25 |      2,694     11.7% |         32     36.3%
+       26 |         63     13.9% |          7     60.2%
+       27 |          8     55.5% |          1     99.8%
+       28 |          2     99.3% |          1    100.0%
+------------------------------------------------------------------------------
+LENS: jlens
+------------------------------------------------------------------------------
+
+  failures_fullsweep (137 stale failures)  (n=137)
+    At the best-margin layer:
+      rank_correct: mean=    28,488  median=    19,761  IQR=[    4,705,    48,619]  min=       3  max=   109,013
+      rank_stale  : mean=   110,980  median=   117,309  IQR=[   92,178,   137,144]  min=   7,002  max=   151,649
+      margin     : mean=    82,492  median=    81,650
+    Best (min over layers) rank_correct: mean=        11  median=         2
+      examples whose BEST rank_correct <=     1: 48/137 =  35.0%
+      examples whose BEST rank_correct <=    10: 124/137 =  90.5%
+      examples whose BEST rank_correct <=   100: 135/137 =  98.5%
+      examples whose BEST rank_correct <= 1,000: 137/137 = 100.0%
+      examples whose BEST rank_correct is WORSE than chance (5,069): 0/137 =   0.0%
+
+  fullsweep_500 :: FAILURES  (n=12)
+    At the best-margin layer:
+      rank_correct: mean=    22,225  median=    16,012  IQR=[    6,646,    39,128]  min=     621  max=    48,834
+      rank_stale  : mean=   115,082  median=   116,700  IQR=[   94,029,   135,544]  min=  79,065  max=   146,894
+      margin     : mean=    92,857  median=    94,410
+    Best (min over layers) rank_correct: mean=         4  median=         2
+      examples whose BEST rank_correct <=     1: 3/12 =  25.0%
+      examples whose BEST rank_correct <=    10: 11/12 =  91.7%
+      examples whose BEST rank_correct <=   100: 12/12 = 100.0%
+      examples whose BEST rank_correct <= 1,000: 12/12 = 100.0%
+      examples whose BEST rank_correct is WORSE than chance (5,069): 0/12 =   0.0%
+
+  fullsweep_500 :: SUCCESSES  (n=488)
+    At the best-margin layer:
+      rank_correct: mean=    12,313  median=     4,280  IQR=[      335,    15,272]  min=       1  max=   110,957
+      rank_stale  : mean=   131,326  median=   139,418  IQR=[  120,873,   147,561]  min=  26,878  max=   152,058
+      margin     : mean=   119,013  median=   126,634
+    Best (min over layers) rank_correct: mean=         1  median=         1
+      examples whose BEST rank_correct <=     1: 474/488 =  97.1%
+      examples whose BEST rank_correct <=    10: 488/488 = 100.0%
+      examples whose BEST rank_correct <=   100: 488/488 = 100.0%
+      examples whose BEST rank_correct <= 1,000: 488/488 = 100.0%
+      examples whose BEST rank_correct is WORSE than chance (5,069): 0/488 =   0.0%
+
+  Depth breakdown [jlens] -- median rank_correct and %% of examples with rank_correct<=10:
+    layer |   FAIL med  FAIL<=10 |   SUCC med  SUCC<=10
+        0 |    123,601      0.0% |    115,896      0.0%
+        1 |      7,221      0.7% |         19     42.4%
+        2 |     68,693      0.0% |     29,906      4.3%
+        3 |     70,821      0.0% |     40,762      0.0%
+        4 |     58,534      0.0% |     37,640      0.0%
+        5 |         46     30.7% |          2     82.6%
+        6 |      3,710      2.2% |         18     38.9%
+        7 |        408      9.5% |          4     74.6%
+        8 |      1,956      6.6% |          5     63.5%
+        9 |        114     14.6% |          6     57.4%
+       10 |        715      1.5% |          7     54.9%
+       11 |     75,546      0.0% |        418     25.8%
+       12 |      4,854      3.6% |          6     58.8%
+       13 |        326     12.4% |          1     86.3%
+       14 |    108,082      0.0% |     20,060      2.3%
+       15 |     72,343      0.0% |      4,465      1.0%
+       16 |     64,942      1.5% |     29,662      0.4%
+       17 |     35,970      2.9% |     13,489      2.5%
+       18 |     22,153      2.9% |      5,224     10.2%
+       19 |      4,122      5.1% |          5     59.0%
+       20 |    105,008      0.0% |      4,216      4.1%
+       21 |      3,279      7.3% |         58     32.6%
+       22 |    118,942      0.0% |     28,257      0.8%
+       23 |     10,479      0.0% |         50     24.0%
+       24 |    113,174      0.0% |     58,286      0.4%
+       25 |     50,028      0.0% |      4,640      1.4%
+       26 |     65,988      0.0% |     38,710      0.2%
+       27 |    101,950      0.0% |     70,015      2.5%
+       28 |          2     73.7% |          1     80.9%
+
+------------------------------------------------------------------------------
+RECONCILIATION of 'mean best rank 47,343' (Run 1) vs '2.3' (Run 3)
+------------------------------------------------------------------------------
+
+  5k run (layers [5, 8, 13]) stale examples: 137
+  137-failure fullsweep examples       : 137
+  Same underlying examples (re-indexed)? True
+  (example_id/dataset_index are renumbered 0..136 in the fullsweep run,
+   so they look disjoint by id but the per-example rank signatures match exactly.)
+
+  Mean/median BEST (min over swept layers) logitlens_rank_correct, same 137 examples:
+    swept at layers [5, 8, 13] only (5k run)   : mean=  47,343.5  median=   44,626
+    fullsweep restricted to layers [5, 8, 13]  : mean=  47,343.5  median=   44,626
+    swept at all 29 layers (0..28)       : mean=       2.3  median=        2
+
+  -> 47,343 and 2.3 are the SAME lens (logitlens) on the SAME 137 examples.
+     The only difference is the layer set the min is taken over.
+
+  Layer at which the best rank_correct is achieved (137 failures, full sweep):
+    layer 26:    1  (  0.7%)
+    layer 27:   21  ( 15.3%)
+    layer 28:  115  ( 83.9%)
+    -> best layer is >= 26 (near-output) in 100.0% of failures
+
+  AT that best-rank layer, does the correct room outrank the stale room?
+    yes in 18/137 =  13.1%
+    median rank_stale at that layer: 1  (median rank_correct: 2)
+
+  Conversely, at the MAX-MARGIN layer (where correct wins by the most):
+    median layer: 9   (layers >= 26: 1.5%)
+    median rank_correct:     24,183
+    median rank_stale  :    103,440
+
+  The two facts do not combine into the claim:
+    * Where the correct room is near the TOP (rank ~2), it is at layers 26-28,
+      and there the stale room is rank 1 -- the correct room LOSES. Being the
+      runner-up at the output is what a stale failure looks like by definition;
+      it is not evidence of an internal representation.
+    * Where the correct room genuinely OUTRANKS the stale room by a wide margin,
+      both tokens are buried in the tail (median ~24k vs ~103k of ~152k vocab).
+      Neither is meaningfully represented at that depth.
+  These two regimes are disjoint. The headline statistic is built by taking the
+  existence test from one regime and the impressive rank number from the other.
+
+
+==============================================================================
+CONTROL 4 -- DEPTH PROFILE (mean rank per layer, failures vs successes)
+==============================================================================
+
+Question: do failures and successes track each other through most of the stack
+and separate only in the final layers?
+
+FAILURE ARM: the full 137-failure file, NOT the 12 failures inside fullsweep_500.
+Both files carry all 29 layers and the 12 examples they share are bit-identical
+on every rank column (verified in the reconciliation block above), so they pool.
+An earlier version of this script used the n=12 arm; that was an error -- 137
+were available the whole time.
+
+CAVEAT (unmatched): the two groups are severely imbalanced on task condition --
+every failure is complexity-3 / agent / middle-distractor, while ~70% of
+successes have no distractors at all. The separation magnitudes below are
+therefore inflated by a hard-vs-easy contrast. controls_check2.py repeats this
+on a matched stratum; prefer those numbers.
+  failures: 137   successes: 488
+
+------------------------------------------------------------------------------
+LENS: logitlens  -- mean rank per layer (lower = better)
+------------------------------------------------------------------------------
+ layer  fail_correct_mean  fail_stale_mean  succ_correct_mean  succ_stale_mean
+     0             73,008           89,184             84,369           81,658
+     1             49,392           47,925             50,250           51,096
+     2             50,344           36,717             40,823           43,144
+     3             40,487           33,879             37,115           38,478
+     4             45,570           35,769             42,666           43,921
+     5             62,345           44,415             53,789           56,008
+     6             65,879           50,734             55,264           56,808
+     7             64,249           53,124             68,167           67,687
+     8             72,819           62,617             64,121           64,780
+     9             91,412           65,689             68,747           72,985
+    10             71,455           53,767             54,636           58,810
+    11             77,996           51,930             57,768           62,941
+    12             88,070           55,212             57,481           60,848
+    13             83,542           62,640             58,053           64,097
+    14             86,590           63,204             70,220           77,007
+    15             87,384           57,231             66,326           72,510
+    16             90,453           53,493             61,390           66,383
+    17             92,867           58,844             60,433           68,594
+    18             83,330           52,283             53,879           58,804
+    19             61,240           49,126             50,540           55,039
+    20             55,552           54,401             42,657           49,469
+    21             55,845           58,236             40,963           47,955
+    22             44,166           54,335             34,852           49,621
+    23             19,069           18,506              6,130           33,592
+    24              8,457            5,148                654           23,852
+    25              8,512            2,775                455           28,351
+    26              2,046            2,364                187           20,603
+    27                 30                2                  1            5,960
+    28                  2                1                  1              385
+
+  Gap (mean rank_stale - mean rank_correct); positive = correct better:
+    failures : layers 0-23 mean gap =      -14,575 | last 5 layers =       -1,751
+    successes: layers 0-23 mean gap =        5,067 | last 5 layers =       15,571
+------------------------------------------------------------------------------
+LENS: jlens  -- mean rank per layer (lower = better)
+------------------------------------------------------------------------------
+ layer  fail_correct_mean  fail_stale_mean  succ_correct_mean  succ_stale_mean
+     0            119,472          108,019            111,392          110,152
+     1             24,143            8,085              6,324           16,810
+     2             72,271           49,168             45,144           53,074
+     3             64,749           39,843             42,570           49,987
+     4             61,285           43,795             54,041           57,987
+     5              1,579              689                834           18,450
+     6             14,110            4,222              3,010           42,777
+     7              8,431            1,263                382           15,857
+     8             17,288            1,597              1,714           12,926
+     9              4,663              322              1,791            9,957
+    10             10,005              291              1,471           20,293
+    11             69,802           28,882             12,677           39,703
+    12             27,743              973              2,130           18,575
+    13             11,420            2,065                422            1,691
+    14             95,582           80,211             40,164           47,989
+    15             75,111           16,925             18,440           34,085
+    16             71,753           72,318             43,113           43,451
+    17             53,489           35,213             31,283           54,465
+    18             45,322           26,723             17,903           29,596
+    19             25,953           15,244              3,383           21,644
+    20             94,246           50,835             20,763           55,339
+    21             16,877            9,197              3,934            4,444
+    22            102,829           60,478             43,403          111,268
+    23             18,408           15,722              1,362            5,596
+    24            103,360           89,568             69,850           95,809
+    25             52,370           36,739             11,676           41,798
+    26             69,573           68,220             44,383           68,219
+    27             93,915           67,653             72,187          101,622
+    28             38,850           38,849             28,980           29,106
+
+  Gap (mean rank_stale - mean rank_correct); positive = correct better:
+    failures : layers 0-23 mean gap =      -18,102 | last 5 layers =      -11,408
+    successes: layers 0-23 mean gap =       15,353 | last 5 layers =       21,896
+
+  saved plot: /Users/tarun/Desktop/TeamHJRA/task 4/reports/depth_profile_logitlens.png
+
+  saved plot: /Users/tarun/Desktop/TeamHJRA/task 4/reports/depth_profile_jlens.png
+  saved plot: /Users/tarun/Desktop/TeamHJRA/task 4/reports/control_saturation.png
+
+==============================================================================
+SUMMARY / VERDICT
+==============================================================================
+  * [C1/logitlens] SYMMETRY FAILS: stale outranks correct in >=1 layer in 100.0% of the 137 failures (claim direction: 100.0%). The existence test fires in BOTH directions.
+
+  * [C1/jlens] SYMMETRY FAILS: stale outranks correct in >=1 layer in 100.0% of the 137 failures (claim direction: 100.0%). The existence test fires in BOTH directions.
+
+  * [C2/logitlens] DISCRIMINATION FAILS: successes hit 100.0% on the very same 'correct outranks stale in >=1 layer' test (failures: 100.0%). Delta = +0.0 pp -- the statistic does not distinguish the two groups.
+
+  * [C2/jlens] DISCRIMINATION FAILS: successes hit 100.0% on the very same 'correct outranks stale in >=1 layer' test (failures: 100.0%). Delta = +0.0 pp -- the statistic does not distinguish the two groups.
+
+------------------------------------------------------------------------------
+Bottom line
+------------------------------------------------------------------------------
+
+The claim's statistic ('correct outranks stale in >=1 of 29 layers') is an
+existence test over 29 noisy draws. Controls 1 and 2 show it saturates at or
+near 100% in the reverse direction and on successes alike, so it carries almost
+no information about failures specifically. Control 3 shows the 47,343-vs-2.3 gap is
+not a lens difference: it is the same lens on the same 137 examples, and the
+whole improvement comes from widening the sweep to include layers 26-28. The
+rank-2 result sits at the output layers where the stale room is rank 1, so the
+correct room is merely the runner-up; where it genuinely outranks the stale
+room, both are buried around rank 24k vs 103k. Control 4 shows where, if anywhere, the two groups actually separate.
+
