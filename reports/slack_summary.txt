@@ -1,0 +1,31 @@
+```
+Task 4 -- controls round 2 (condition-matched). CSV-only, no GPU.
+
+THE ORIGINAL CLAIM
+  'correct outranks stale in >=1 of 29 layers', 137/137 failures
+  symmetry     : stale outranks correct in >=1 layer -> 137/137 too
+  permutation  : null is a POINT MASS at 1.000, p = 1.00
+                 -> statistic is invariant under label swap: untestable, not just weak
+  graded form  : correct wins 10.9/29 layers vs null 14.5, p = 0.0000
+                 -> significant in the WRONG direction
+
+THE CONFOUND (why round-1 numbers were inflated)
+  100% of failures are complexity-3 / agent / middle-distractor
+  ~70% of successes have NO distractors -> hard-vs-easy, not fail-vs-success
+  matched stratum: 72 of 488 successes survive (682 in the 5k run)
+
+SURVIVORS -- layer chosen by split-half, not by eye
+  measure                      L    raw  matched  perm p  held-out  stable
+  jlens_margin                 5  0.958    0.888  0.0000     0.882     96%
+  logitlens_margin            18  0.690    0.703  0.0000     0.669     32%
+  attn_correct_minus_stale    22  0.994    0.973  0.0000     0.970     90%
+  (held-out AUC is for the layer that split-half actually picks;
+   'stable' = % of 500 splits picking that layer. <50% = not reproducible.)
+
+VERDICT
+  jlens_margin @L5: SURVIVES perm null + split-half
+  logitlens_margin @L18: DOES NOT SURVIVE perm null + split-half
+  attn_correct_minus_stale @L22: SURVIVES perm null + split-half
+  logitlens: real but diffuse -- passes the null, no reproducible best layer.
+  All of this is correlational. Causal claims still need patching/ablation.
+```
