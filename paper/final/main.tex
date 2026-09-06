@@ -12,12 +12,15 @@
 \newif\ifchecklist \checklisttrue   % the NeurIPS checklist is mandatory; keep true
 
 % Venue is not decided. Parameterized rather than guessed -- see paper/NOTES.md.
-% NOTE: the official style emits "Submitted to <N>th Conference on NeurIPS (2026).
-% Do not distribute." automatically in submission builds, and substitutes the track
-% string only in the camera-ready (final) build. So the venue name is parameterized
-% in the one place the style consumes it -- \workshoptitle -- rather than printed a
-% second time by hand.
-\newcommand{\venuename}{[WORKSHOP NAME]}
+%
+% IMPORTANT: the style's DEFAULT submission notice reads "Submitted to 40th
+% Conference on Neural Information Processing Systems (NeurIPS 2026). Do not
+% distribute." That is FALSE for this paper -- it has not been submitted to
+% NeurIPS -- and must never appear in a build. We do not edit neurips_2026.sty;
+% instead we override its \@noticestring below, after the package is loaded.
+% build.sh asserts that the default string is absent from the anonymized PDF and
+% that \venuename's current value is present, and fails the build otherwise.
+\newcommand{\venuename}{[VENUE --- SET BEFORE SUBMISSION]}
 
 % Official NeurIPS 2026 style file (neurips_2026.sty, 2026-01-29), used verbatim.
 % Track: workshop with double-blind reviewing. Change the track option here if the
@@ -28,6 +31,18 @@
   \usepackage[dblblindworkshop, final]{neurips_2026}
 \fi
 \workshoptitle{\venuename}
+
+% Notice strings. \@noticestring is the style's macro (neurips_2026.sty lines
+% 392-403), defined per build mode; we replace whichever one is active.
+\newcommand{\venuenotice}{Submitted to \venuename. Do not distribute.}
+\newcommand{\preprintnotice}{Preprint. Under review at \venuename.}
+\makeatletter
+\ifanon
+  \renewcommand{\@noticestring}{\venuenotice}
+\else
+  \renewcommand{\@noticestring}{\preprintnotice}
+\fi
+\makeatother
 
 \usepackage{amsmath,amssymb}
 \usepackage{booktabs}

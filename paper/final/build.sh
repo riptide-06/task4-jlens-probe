@@ -25,7 +25,7 @@
 #      gutter at the source. The shipped main.pdf keeps its line numbers.
 #   Anything else differing is a bug and fails this script.
 #
-# EXIT CODES  0 ok | 1 latex error | 2 text diff outside whitelist | 3 assertion
+# EXIT CODES  0 ok | 1 latex error | 2 text diff outside whitelist | 3 notice assertion
 # =============================================================================
 set -uo pipefail
 cd "$(dirname "$0")"
@@ -111,6 +111,25 @@ else
   diff a.norm b.norm | head -40
   clean; die "the two builds differ outside the whitelist" 2
 fi
+
+# ------------------------------------------------------ footer/notice assertions
+# The style's default submission notice claims a NeurIPS 2026 submission. That is
+# false for this paper. main.tex overrides \@noticestring; these assertions make
+# sure the override is actually in effect in the shipped PDFs.
+say "${YEL}== asserting the venue notice ==${RST}"
+DEFAULT_NOTICE='Conference on Neural Information Processing Systems'
+VENUE=$(sed -nE 's/^\\newcommand\{\\venuename\}\{(.*)\}$/\1/p' main.tex | head -1)
+VENUE_PLAIN=$(printf '%s' "$VENUE" | sed 's/---/—/g')
+for pdf in main.pdf main_named.pdf; do
+  txt=$(pdftotext "$pdf" - 2>/dev/null)
+  if printf '%s' "$txt" | grep -qF "$DEFAULT_NOTICE"; then
+    die "[$pdf] contains the style's default NeurIPS notice; the \\@noticestring override is not in effect" 3
+  fi
+  if ! printf '%s' "$txt" | grep -qF "$VENUE_PLAIN"; then
+    die "[$pdf] does not contain the current \\venuename value ($VENUE_PLAIN)" 3
+  fi
+  say "  [$pdf] notice ok: no default NeurIPS string; venue present"
+done
 
 clean
 say "${GRN}== OK ==${RST}  main.pdf (anonymized) and main_named.pdf are in sync."
