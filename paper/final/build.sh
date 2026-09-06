@@ -25,7 +25,8 @@
 #      gutter at the source. The shipped main.pdf keeps its line numbers.
 #   Anything else differing is a bug and fails this script.
 #
-# EXIT CODES  0 ok | 1 latex error | 2 text diff outside whitelist | 3 notice assertion
+# EXIT CODES  0 ok | 1 latex error | 2 text diff outside whitelist
+#             3 assertion failure (page budget or venue notice)
 # =============================================================================
 set -uo pipefail
 cd "$(dirname "$0")"
@@ -111,6 +112,36 @@ else
   diff a.norm b.norm | head -40
   clean; die "the two builds differ outside the whitelist" 2
 fi
+
+# ------------------------------------------------------- main-text page budget
+# The venue limit applies to the MAIN TEXT, not the total page count: references,
+# appendices and the checklist do not count. Main text is therefore everything
+# before the References heading, i.e. (page on which References starts) - 1.
+say "${YEL}== main-text page budget ==${RST}"
+MAIN_LIMIT=8
+refpage=$(python3 - <<'PYEOF'
+import subprocess, sys
+n = int(subprocess.run(["pdfinfo", "main.pdf"], capture_output=True, text=True)
+        .stdout.split("Pages:")[1].split()[0])
+for pg in range(1, n + 1):
+    t = subprocess.run(["pdftotext", "-f", str(pg), "-l", str(pg), "main.pdf", "-"],
+                       capture_output=True, text=True).stdout
+    # The bibliography page: has the heading and is short (body pages are dense).
+    if "References" in t and len(t) < 5000:
+        print(pg); sys.exit(0)
+print(0)
+PYEOF
+)
+if [ "$refpage" -eq 0 ]; then
+  die "could not locate the References page to measure the main text" 3
+fi
+maintext=$((refpage - 1))
+total=$(pdfinfo main.pdf | awk '/^Pages/{print $2}')
+say "  main text: ${maintext} pages (References starts on page ${refpage}); total incl. appendices and checklist: ${total}"
+if [ "$maintext" -gt "$MAIN_LIMIT" ]; then
+  die "main text is ${maintext} pages, over the ${MAIN_LIMIT}-page limit" 3
+fi
+say "  ${GRN}within the ${MAIN_LIMIT}-page main-text limit${RST}"
 
 # ------------------------------------------------------ footer/notice assertions
 # The style's default submission notice claims a NeurIPS 2026 submission. That is

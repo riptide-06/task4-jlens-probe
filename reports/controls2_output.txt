@@ -6,6 +6,16 @@
   12 examples appear in both 29-layer files; all rank columns identical: True
   -> the two files pool. Failure arm = all 137 (not the 12 inside fullsweep_500).
 
+  CONDITION CONFOUND (example-level, % within each outcome group)
+    condition                                failures  successes
+    complexity_level == 3                      100.0%      29.3%
+    n_distractors >= 3                         100.0%      29.3%
+    n_distractors == 0                           0.0%      70.7%
+    distractor_position == middle              100.0%      29.3%
+    distractor_position == none                  0.0%      70.7%
+    entity_type == agent                       100.0%      52.5%
+    (n = 137 failures, 488 successes; unmatched)
+
   MATCHED STRATUM: complexity_level=3, entity_type=agent, distractor_position=middle, n_distractors in [3, 4]
     29-layer successes :   488 raw ->   72 matched
     29-layer failures  :   137 raw ->  137 matched  (all 137 already in stratum)
@@ -28,7 +38,7 @@ MISSING-DATA POLICY (attn_* columns)
 
   Policy: the attn_* sweep runs over depths 0..27 and depth 28 is reported as
   "no data", never as a zero, a fill, or an omitted row. No other row is dropped,
-  because none needs to be. Rank/lens columns have no missing values at any layer.
+  because none needs to be. Rank/lens columns have no missing values at any depth.
 
 
 ==============================================================================

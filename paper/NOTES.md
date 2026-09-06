@@ -65,7 +65,7 @@ output file; none was typed from memory.
 ### From `reports/controls2_output.txt` (controls_check2.py)
 | Number | Where | Locate in file |
 |---|---|---|
-| 100% / 29.3% / 70.7% / 52.5% confound table | §5.3 | "CONFOUND CHECK" (also §1 of controls_check2 output) |
+| 100% / 29.3% / 70.7% / 52.5% confound table | §5.3 | "CONDITION CONFOUND (example-level...)" |
 | 72 of 488; 682 of 4,853 matched | §5.3, §6 | "MATCHED STRATUM" |
 | Null A: point mass at 1.0000, p = 1.00 | §5.1, abstract | "STATISTIC 1 (the claim)" |
 | G = 10.93 vs null 14.48 [13.12, 15.82] | §5.1, abstract | "STATISTIC 2 (graded)" |
@@ -263,6 +263,28 @@ existence-over-depth statistic. Rewritten to cite them as an example of the
 that the existence statistic is one common route to such conclusions and the one
 this paper examines. No reference added or changed in refs.bib.
 
+## 4e. Number audit (Fix 10)
+
+Method: extract every substantive numeric token from `main.pdf` (main text and
+appendices; the checklist restates the same figures), then require each to
+appear verbatim in a committed output under `reports/` or `outputs/*/config.json`.
+
+**Result: 95 tokens checked, 0 unmapped.** Excluded by category:
+- 6 bibliography identifiers (arXiv IDs, DOIs, an ISBN) — not statistics.
+- Publication years.
+- One derived value: **91.5%** in §3 is `sim_summary.json`'s
+  `panel_a_P_E_at_L29["c_genuinely_worse_offset_-0.75"]` = `0.9145`, expressed as
+  a percentage. The JSON holds the proportion; the paper states the percentage.
+
+**The audit caught a real gap.** The Section 5.3 confound percentages
+(100% / 29.3% / 70.7% / 52.5%) were *not* produced by any committed script — they
+came from ad-hoc exploration during the first pass and had been carried into the
+paper unsourced. `controls_check2.py` now computes and prints the full
+example-level confound table, and all four figures reproduce exactly. This was
+the last unmapped number in the paper.
+
+The audit is repeatable; the extraction is a dozen lines and is described above.
+
 ## 5. Unverified references
 
 **None.** All 15 entries in `refs.bib` were verified on 2026-09-06 against arXiv
@@ -308,6 +330,23 @@ inline. `build.sh` instead compiles a third, throwaway anonymous build with
 `\DIFFBUILD` set, which suppresses the gutter at the source, and diffs that. The
 shipped `main.pdf` keeps its line numbers for reviewers.
 
+## 5c. Reviewer pass (updated, Fix 10)
+
+Each objection with the sentence that answers it. Verified present in the current
+`main.pdf` by text search.
+
+| # | Likely objection | Where it is answered |
+|---|---|---|
+| **1** | **"The depth-22 result rests on only 72 matched controls."** | §6 Statistical power: "The matched full-depth comparison rests on 72 successes." Mitigated but not removed — the 682-control re-sweep is the top open TODO, and §5.4's per-head corroboration is independent of the 72. |
+| 2 | "This is all correlational." | Abstract ("Every surviving result is correlational"); §6: "A measure that predicts an outcome need not participate in producing it." |
+| 3 | "Is J-lens even valid?" | §6: not enabled for any of the three runs; a separate diagnostic invocation exceeded the threshold; every J-lens result daggered "provisional pending replay validation". |
+| 4 | "Single model, single synthetic dataset." | §6 Scope. |
+| 5 | "Who cares about one internal result of yours?" | §1 opens on the general pattern; §3 is model-free; the case study is confined to §4–5 and Appendices A–C. |
+| 6 | "Isn't depth 22 itself selected post hoc?" | §3 Null B (max-$T$) and split-half; Table 3 reports both, and logit-lens margin fails the second. |
+| 7 | "Doesn't the per-head result just restate the depth-22 AUC?" | §5.4: per-head, built from raw attention tensors, "a check on the depth-22 result rather than a restatement of it." |
+
+Objection 1 is the strongest remaining and is now first in the list.
+
 ## 6. Open TODOs
 
 1. ~~Fold the J-lens decomposition into `controls_check2.py`~~ **DONE** (section 4b); the paper now uses matched, reproducible values.
@@ -331,4 +370,5 @@ shipped `main.pdf` keeps its line numbers for reviewers.
 | Item | Status | Why |
 |---|---|---|
 | Fix 2.4 — run repaired self-check on ≥20 seeded records, commit `reports/self_check_bf16.json` | **Skipped** | `nvidia-smi` absent; no CUDA device on this machine. The one-sentence disclosure path was taken instead, citing no number. |
-| Appendix C — fill with `jlens_diag.py` results | **Skipped** | Same. Appendix C now states it remains unrun and what running it would settle either way. |
+| Appendix D — fill with `jlens_diag.py` results | **Skipped** | Same. It now states it remains unrun and what running it would settle either way. |
+| Determinism sentence (Fix 5d) | **Omitted** | No second-pass output is committed anywhere in `outputs/`, so there is nothing to cite. Recorded rather than asserted. |

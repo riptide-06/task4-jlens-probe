@@ -125,6 +125,26 @@ ok = all(np.array_equal(A[c].to_numpy(), B[c].to_numpy()) for c in rankcols)
 print(f"  {len(shared)} examples appear in both 29-layer files; all rank columns identical: {ok}")
 print(f"  -> the two files pool. Failure arm = all 137 (not the 12 inside fullsweep_500).")
 
+# The condition confound, quantified. These are the percentages the paper's
+# Section 5.3 table reports; compute them here so they are sourced rather than
+# recalled. Example-level, not row-level.
+CONFOUND_COLS = ["complexity_level", "n_distractors", "distractor_position", "entity_type"]
+_f1 = fail.groupby("example_id").first()
+_s1 = mixed_succ.groupby("example_id").first()
+print("\n  CONDITION CONFOUND (example-level, % within each outcome group)")
+print(f"    {'condition':38s} {'failures':>10} {'successes':>10}")
+_rows = [
+    ("complexity_level == 3", (_f1.complexity_level == 3), (_s1.complexity_level == 3)),
+    ("n_distractors >= 3", (_f1.n_distractors >= 3), (_s1.n_distractors >= 3)),
+    ("n_distractors == 0", (_f1.n_distractors == 0), (_s1.n_distractors == 0)),
+    ("distractor_position == middle", (_f1.distractor_position == "middle"), (_s1.distractor_position == "middle")),
+    ("distractor_position == none", (_f1.distractor_position == "none"), (_s1.distractor_position == "none")),
+    ("entity_type == agent", (_f1.entity_type == "agent"), (_s1.entity_type == "agent")),
+]
+for lbl, fm, sm in _rows:
+    print(f"    {lbl:38s} {100*fm.mean():>9.1f}% {100*sm.mean():>9.1f}%")
+print(f"    (n = {len(_f1)} failures, {len(_s1)} successes; unmatched)")
+
 m_succ, m_fail = match(mixed_succ), match(fail)
 s_succ, s_fail = match(sparse_succ), match(sparse_fail)
 print(f"\n  MATCHED STRATUM: complexity_level=3, entity_type=agent, "
@@ -152,7 +172,7 @@ print(f"""
 
   Policy: the attn_* sweep runs over depths 0..27 and depth 28 is reported as
   "no data", never as a zero, a fill, or an omitted row. No other row is dropped,
-  because none needs to be. Rank/lens columns have no missing values at any layer.
+  because none needs to be. Rank/lens columns have no missing values at any depth.
 """)
 
 
