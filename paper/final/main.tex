@@ -279,7 +279,10 @@ selected. A measure whose selected depth is not reproducible across splits does
 not support a claim naming that depth.
 
 \paragraph{Excluded bands.} Two ranges must be excluded before any
-``internal'' claim. Positions adjacent to the embedding carry little of the
+``internal'' claim. Concretely, for the 29 residual-stream positions of the case
+study we take the \textbf{internal band to be depths 2--23}, excluding depths
+0--1 as \emph{near-embedding} and depths 24--28 as \emph{output-committed}. Every
+later reference to ``the internal band'' means exactly this range. Positions adjacent to the embedding carry little of the
 model's computation. Positions adjacent to the output are worse: at the final
 residual position the lens is one norm and one unembedding away from the logits,
 so it \emph{is} the model's decision, and any statistic separating outcomes
@@ -317,7 +320,11 @@ a structural fact, not a capture failure. We say ``depths'' rather than
 \paragraph{Runs.} Three runs, all from the same 5{,}000-record dataset
 (Table~\ref{tab:runs}). Behaviourally the model answers correctly on $97.1\%$ of
 records, emits the stale state on $2.7\%$ ($137$ records), and produces an
-unparseable answer on $0.2\%$. The 137-failure run is the complete failure
+unparseable answer on $0.2\%$. Failures are entirely concentrated: the
+stale-output rate is $0.00\%$ at complexity levels 1 and 2 and $8.22\%$ at
+level 3, and $0.00\%$ for object entities against $5.47\%$ for agents. This
+concentration is what makes the matched comparison in
+Section~\ref{sec:results} necessary rather than optional. The 137-failure run is the complete failure
 population, re-swept at all depths. Reconstructing this required signature
 matching, because that export renumbered example identifiers
 (Appendix~\ref{app:provenance}); the twelve failures common to both full-depth
@@ -428,6 +435,27 @@ the lens there is the model's decision.}
 \label{fig:rawmatched}
 \end{figure}
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{../../reports/depth_profile_matched_logitlens.pdf}
+\caption{Rank of the correct and stale tokens at every residual-stream depth,
+logit lens, on the matched groups (137 failures against 72 matched successes).
+The axis is inverted, so higher on the plot is a better (smaller) rank. Grey
+bands are the excluded near-embedding and output-committed depths. The J-lens
+version is Figure~\ref{fig:depthjlens}.}
+\label{fig:depth}
+\end{figure}
+
+Figure~\ref{fig:depth} shows what the two groups look like across the whole
+stack. All four curves sit together around rank $10^5$ from the embedding to
+about depth 22, and separate only over the last five or six positions. Averaged
+over the internal band the mean gap (stale rank minus correct rank, so positive
+favours the correct token) is $-16{,}569$ in failures against $+9{,}242$ in
+matched successes: through most of the stack of a failure the stale token is
+\emph{better} ranked than the correct one, which is the opposite of what the
+retracted claim asserted. Depth 22 is where the ordering starts to move, which is
+also where the surviving attention signal sits.
+
 \subsection{What survives}
 
 \begin{table}[t]
@@ -441,10 +469,13 @@ Measure & Depth & Raw & Matched & Null B $p$ & Held-out & Depth stability \\
 \code{logitlens\_margin}           & 18 & $0.690$ & $0.703$ & $<10^{-4}$ & $0.669$ & \no{$32\%$} \\
 \bottomrule
 \end{tabular}
-\caption{Matched, selection-corrected results. Depth is the one split-half
-actually selects; stability is the fraction of 500 splits selecting it.
-\prov J-lens results are provisional pending replay validation
-(Section~\ref{sec:limits}).}
+\caption{Matched, selection-corrected results. \emph{Depth} is the one
+split-half actually selects; \emph{stability} is the fraction of 500 splits
+selecting it. \emph{Null B $p$} is a max-$T$ permutation $p$-value: 5{,}000
+shuffles of the outcome labels, taking the maximum $|\mathrm{AUC}-0.5|$ over the
+internal band (depths 2--23) inside each shuffle, so it already prices in having
+chosen the best depth. \prov J-lens results are provisional pending replay
+validation (Section~\ref{sec:limits}).}
 \label{tab:survive}
 \end{table}
 
@@ -461,6 +492,17 @@ selects is reproducible in only $32\%$ of splits, spreading across depths 12, 16
 18 and 23. The effect is real but diffuse, and no claim naming a specific
 logit-lens depth is supported. This is precisely the distinction the split-half
 control exists to draw, and it is invisible to a permutation test alone.
+
+\paragraph{Independent per-head corroboration.} The depth-22 result above is
+computed from per-example attention aggregates. A separate per-head analysis,
+built from the raw attention tensors, ranks all 784 (depth, head) pairs by how
+much more a head prefers the stale anchor over the update mention in failures
+than in successes. Of its top 20 heads, \textbf{15 fall in depths 19--22} and
+\textbf{all 20 in depths 19--26}, with \textbf{9 at depth 22 alone}; the
+highest-scoring single head is at depth 23. Because this statistic is
+per-head and does not pass through the aggregates used above, it is a check on
+the depth-22 result rather than a restatement of it. It also supplies the
+patching target in Appendix~\ref{app:patch}.
 
 The full attention sweep (Figure~\ref{fig:attn}) locates discrimination at depths
 19--25 and near chance through the early and middle stack. Within the matched
@@ -586,12 +628,30 @@ column, which is what licenses pooling them into a single
 137-versus-488 comparison. An earlier version of this analysis used only the
 twelve failures inside the 500-record run, an avoidable loss of power.
 
+\section{Matched depth profile, J-lens; and the unmatched gaps}
+\label{app:depthextra}
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{../../reports/depth_profile_matched_jlens.pdf}
+\caption{As Figure~\ref{fig:depth}, under J-lens. Provisional pending replay
+validation.}
+\label{fig:depthjlens}
+\end{figure}
+For contrast only, the same internal-band mean gaps computed on the
+\textbf{unmatched} groups (137 failures against all 488 successes) are
+$-16{,}569$ for failures and $+5{,}612$ for successes under the logit lens. The
+failure figure is unchanged because all 137 failures already lie inside the
+matched stratum; the success figure is not, which is the confound in one number.
+These unmatched values are reported here and nowhere else.
+
 \section{Planned patching experiment}
 \label{app:patch}
 For each of the 137 failures, patch attention-head outputs at depths 19--22 from
 a condition-matched success in the same cell, and measure the rate at which the
-output flips to the correct room. Controls: random heads at the same depths;
-heads ranked lowest by the committed head ranking; and mean-ablation of the
+output flips to the correct room. The target heads are the top-ranked
+ones from the per-head analysis in Section~\ref{sec:results}, which concentrate
+in depths 19--22. Controls: random heads at the same depths;
+heads ranked lowest by the same committed head ranking; and mean-ablation of the
 top-$k$ stale-preferring heads. A patch applied at the decision token can
 transfer the donor's answer outright, which is answer-copying rather than
 localization; the donor-mismatch control detects this. Metrics and corruption
@@ -622,7 +682,14 @@ Every number in this paper is produced by a committed script over committed CSVs
 No GPU is required.
 \begin{quote}\code{python3 controls\_check.py}\\
 \code{python3 controls\_check2.py}\\
-\code{python3 sim/existence\_null\_sim.py}\end{quote}
+\code{python3 sim/existence\_null\_sim.py}\\
+\code{python3 depth\_profile\_matched.py}\\
+\code{python3 paper\_extras.py}\\
+\code{python3 run\_metadata.py}\\
+\code{cd paper/final \&\& ./build.sh}\end{quote}
+\code{build.sh} is the only supported way to build the paper: it compiles both
+the anonymized and named PDFs from the single source, diffs their text outside a
+documented whitelist, and asserts the venue notice.
 Outputs land in \code{reports/}. Seeds are fixed (5{,}000 permutations,
 500 splits). The paper pulls its figures from \code{reports/} at build time.
 

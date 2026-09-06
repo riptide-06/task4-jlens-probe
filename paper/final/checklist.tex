@@ -20,7 +20,7 @@
 \item {\bf Limitations}
     \item[] Question: Does the paper discuss the limitations of the work performed by the authors?
     \item[] Answer: \answerYes{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: Section~6 (Limitations) covers the unresolved J-lens replay validation and the two self-check defects we found, what J-lens measures by construction given it executes decoder layers $\ell..28$, the 72-success ceiling on the matched full-depth comparison, the 137-failure cap, single model and single synthetic dataset, and the total absence of causal evidence.
+    \item[] Justification: Section~\ref{sec:limits} (Limitations) covers the unresolved J-lens replay validation and the two self-check defects we found, what J-lens measures by construction given it executes decoder layers $\ell..28$, the 72-success ceiling on the matched full-depth comparison, the 137-failure cap, single model and single synthetic dataset, and the total absence of causal evidence.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper has no limitation while the answer \answerNo{} means that the paper has limitations, but those are not discussed in the paper. 
@@ -36,7 +36,7 @@
 \item {\bf Theory assumptions and proofs}
     \item[] Question: For each theoretical result, does the paper provide the full set of assumptions and a complete (and correct) proof?
     \item[] Answer: \answerNA{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: The paper contains no theorems. Its one analytic observation---that the existence statistic is invariant under the whole-example label swap when both directions hold in every example, so its null is a point mass---is immediate from the definition and is stated inline in Section~3, then confirmed empirically by a 5{,}000-permutation test.
+    \item[] Justification: The paper contains no theorems. Its one analytic observation---that the existence statistic is invariant under the whole-example label swap when both directions hold in every example, so its null is a point mass---is immediate from the definition and is stated inline in Section~\ref{sec:nulls}, then confirmed empirically by a 5{,}000-permutation test.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not include theoretical results. 
@@ -50,7 +50,7 @@
     \item {\bf Experimental result reproducibility}
     \item[] Question: Does the paper fully disclose all the information needed to reproduce the main experimental results of the paper to the extent that it affects the main claims and/or conclusions of the paper (regardless of whether the code and data are provided or not)?
     \item[] Answer: \answerYes{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: Every number is produced by a committed script over committed CSVs and copied from its output file; none is entered by hand. Seeds are fixed (5{,}000 permutations, 500 splits). The rebuild sequence is in Appendix~D. No GPU is needed to reproduce any result in the paper.
+    \item[] Justification: Every number is produced by a committed script over committed CSVs and copied from its output file; none is entered by hand. Seeds are fixed (5{,}000 permutations, 500 splits). The rebuild sequence is in Appendix~\ref{app:repro}. No GPU is needed to reproduce any result in the paper.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not include experiments.
@@ -87,7 +87,7 @@
 \item {\bf Experimental setting/details}
     \item[] Question: Does the paper specify all the training and test details (e.g., data splits, hyperparameters, how they were chosen, type of optimizer) necessary to understand the results?
     \item[] Answer: \answerYes{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: Section~4 gives the model, precision, attention implementation, prompt format, prefill and readout position, and the composition of all three runs; Appendix~A documents the provenance reconstruction needed to join them. The depth-indexing convention is stated explicitly because it is load-bearing.
+    \item[] Justification: Section~\ref{sec:case} gives the model, precision, attention implementation, prompt format, prefill and readout position, and the composition of all three runs; Appendix~\ref{app:provenance} documents the provenance reconstruction needed to join them. The depth-indexing convention is stated explicitly because it is load-bearing.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not include experiments.
@@ -115,7 +115,7 @@
 \item {\bf Experiments compute resources}
     \item[] Question: For each experiment, does the paper provide sufficient information on the computer resources (type of compute workers, memory, time of execution) needed to reproduce the experiments?
     \item[] Answer: \answerYes{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: The committed per-run configuration files record model, precision, attention implementation, depth set and elapsed wall-clock; \texttt{run\_metadata.py} extracts them and Section~4 states the totals ($5{,}112$\,s across the three runs; $3.52$/$3.49$\,s per record at 29 depths, $0.577$\,s at three). The \emph{GPU model was not logged}, so no hardware is claimed. All analysis reported in this paper is CPU-only and completes in minutes on a laptop.
+    \item[] Justification: The committed per-run configuration files record model, precision, attention implementation, depth set and elapsed wall-clock; \texttt{run\_metadata.py} extracts them and Section~\ref{sec:case} states the totals ($5{,}112$\,s across the three runs; $3.52$/$3.49$\,s per record at 29 depths, $0.577$\,s at three). The \emph{GPU model was not logged}, so no hardware is claimed. All analysis reported in this paper is CPU-only and completes in minutes on a laptop.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not include experiments.
@@ -139,7 +139,7 @@
 \item {\bf Broader impacts}
     \item[] Question: Does the paper discuss both potential positive societal impacts and negative societal impacts of the work performed?
     \item[] Answer: \answerYes{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: Section~7 closes with a \textbf{Broader impact} paragraph: the work raises the evidentiary bar for a class of internal-representation claim, and its foreseeable downside is that genuine effects become harder to publish if the controls are applied without the graded, matched and split-half replacements the paper recommends. No other societal impact is foreseen.
+    \item[] Justification: Section~\ref{sec:reco} closes with a \textbf{Broader impact} paragraph: the work raises the evidentiary bar for a class of internal-representation claim, and its foreseeable downside is that genuine effects become harder to publish if the controls are applied without the graded, matched and split-half replacements the paper recommends. No other societal impact is foreseen.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that there is no societal impact of the work performed.
@@ -181,7 +181,7 @@
 \item {\bf New assets}
     \item[] Question: Are new assets introduced in the paper well documented and is the documentation provided alongside the assets?
     \item[] Answer: \answerYes{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: The analysis scripts, the simulation, and the generated figures and tables are documented in the repository README and in Appendix~D, including the exact commands and the fixed seeds.
+    \item[] Justification: The analysis scripts, the simulation, and the generated figures and tables are documented in the repository README and in Appendix~\ref{app:repro}, including the exact commands and the fixed seeds.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not release new assets.
@@ -217,7 +217,7 @@
     \item[] Question: Does the paper describe the usage of LLMs if it is an important, original, or non-standard component of the core methods in this research? Note that if the LLM is used only for writing, editing, or formatting purposes and does \emph{not} impact the core methodology, scientific rigor, or originality of the research, declaration is not required.
     %this research? 
     \item[] Answer: \answerYes{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: Declared in Appendix~E. A large language model was used as a coding and analysis assistant. All statistical procedures were specified by the authors, and every number in the paper is traceable to a committed script's output file. The LLM is not a component of the method being studied.
+    \item[] Justification: Declared in Appendix~\ref{app:llm}. A large language model was used as a coding and analysis assistant. All statistical procedures were specified by the authors, and every number in the paper is traceable to a committed script's output file. The LLM is not a component of the method being studied.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the core method development in this research does not involve LLMs as any important, original, or non-standard components.

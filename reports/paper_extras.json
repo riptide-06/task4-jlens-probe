@@ -1,0 +1,44 @@
+{
+  "heads": {
+    "n_ranked": 784,
+    "top20_in_19_22": 15,
+    "top20_in_19_26": 20,
+    "top20_at_22": 9,
+    "top_head_depth": 23,
+    "top_head_index": 11,
+    "top_head_score": 1.1338747993462084,
+    "top20_depth_counts": {
+      "22": 9,
+      "19": 3,
+      "21": 2,
+      "24": 2,
+      "23": 1,
+      "25": 1,
+      "26": 1,
+      "20": 1
+    }
+  },
+  "overall_pct": {
+    "correct": 97.06,
+    "stale": 2.74,
+    "other": 0.2
+  },
+  "stale_rate_by_complexity_level": {
+    "1": 0.0,
+    "2": 0.0,
+    "3": 8.223
+  },
+  "n_by_complexity_level": {
+    "1": 1667,
+    "2": 1667,
+    "3": 1666
+  },
+  "stale_rate_by_entity_type": {
+    "agent": 5.467,
+    "object": 0.0
+  },
+  "n_by_entity_type": {
+    "agent": 2506,
+    "object": 2494
+  }
+}

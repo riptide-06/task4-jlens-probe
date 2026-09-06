@@ -81,6 +81,28 @@ output file; none was typed from memory.
 | deviation AUC .871; cross-depth corr .268 vs .538 | §6 | "4b. J-LENS DECOMPOSITION" |
 | 5,733 attn NaNs, all depth 28 | §5.4, §6 | "MISSING-DATA POLICY" |
 
+### From `reports/depth_profile_matched_*.csv` + stdout (depth_profile_matched.py)
+| Number | Where | Locate |
+|---|---|---|
+| matched internal-band gap: failures −16,569, successes +9,242 | §5.3 | "MATCHED failures / successes" |
+| unmatched gap: failures −16,569, successes +5,612 | Appendix B only | "unmatched ... (appendix only)" |
+| Figure 3 (matched depth profile, logit lens) | §5.3 | `depth_profile_matched_logitlens.pdf` |
+| Figure 5 (J-lens version) | Appendix B | `depth_profile_matched_jlens.pdf` |
+
+### From `reports/paper_extras.json` (paper_extras.py)
+| Number | Where | Locate |
+|---|---|---|
+| top-20 heads: 15 in depths 19–22, 20 in 19–26, 9 at depth 22 | §5.4 | `heads.top20_in_19_22` etc. |
+| highest-scoring head at depth 23 | §5.4 | `heads.top_head_depth` |
+| 784 (depth, head) pairs ranked | §5.4 | `heads.n_ranked` |
+| stale rate 0.00% / 0.00% / 8.22% by complexity | §4 | `stale_rate_by_complexity_level` |
+| stale rate 5.47% agent, 0.00% object | §4 | `stale_rate_by_entity_type` |
+
+### From `reports/run_metadata.json` (run_metadata.py)
+| Number | Where | Locate |
+|---|---|---|
+| 5,112 s total (1.42 h); 3.52 / 3.49 / 0.577 s per record | §4, checklist item 8 | `total_elapsed_sec`, `sec_per_record` |
+
 ### From `reports/existence_null_sim_output.txt` (sim)
 | Number | Where | Locate |
 |---|---|---|
