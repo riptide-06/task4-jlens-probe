@@ -1167,11 +1167,26 @@ def print_summary(results: List[Dict[str, Any]]) -> None:
 # 12. SELF-CHECK
 # =============================================================================
 
+# Absolute-logit tolerance for the truncated-stack replay. See run_self_check.
+SELF_CHECK_TOL = 0.5
+
+
 def run_self_check(model, tokenizer, stack: TruncatedStack, record: Dict[str, Any],
                    cfg: ProbeConfig) -> None:
     """Replay the whole stack from layer 0 through TruncatedStack and compare with the real
     forward pass. Validates cache slicing, RoPE positions, layer kwargs and device routing
-    in one number. Anything above ~1e-1 (fp16) means the replay is not faithful."""
+    in one number.
+
+    The failure threshold is SELF_CHECK_TOL (0.5 in absolute logit units), not the ~1e-1
+    this docstring previously claimed; the code has always used 0.5 and the two disagreed.
+    The value is left at 0.5 rather than tightened, because no run in this repo has been
+    executed with --self-check enabled (all three config.json files record
+    "self_check": false), so there is no evidence base for choosing a tighter bound. Do
+    not change it without recording the measurement that justifies the new value.
+
+    max|Delta logit| is a weak statistic on its own: the max over a ~152k vocabulary can
+    land on a deep-tail token whose probability mass is negligible. KL between the two
+    softmaxes is the appropriate quantity; jlens_diag.py computes it."""
     device = next(model.parameters()).device
     text = build_text(tokenizer, record, cfg)
     ids = torch.tensor([tokenizer(text, add_special_tokens=False)["input_ids"]], device=device)
@@ -1189,10 +1204,29 @@ def run_self_check(model, tokenizer, stack: TruncatedStack, record: Dict[str, An
     diff = (real - replay).abs().max().item()
     corr = torch.corrcoef(torch.stack([real, replay]))[0, 1].item()
     agree = int(real.argmax()) == int(replay.argmax())
-    print(f"[self-check] max|Δlogit| = {diff:.4f} | corr = {corr:.6f} | argmax agrees = {agree}")
-    if diff > 0.5 or not agree:
-        print("[self-check] WARNING: the truncated-stack replay does not match the model. "
-              "J-Lens numbers are unreliable — check your transformers version.")
+
+    # KL(real || replay) in nats. Unlike max|Delta logit| this is insensitive to a large
+    # discrepancy on a deep-tail token that carries no probability mass.
+    logp_real = torch.log_softmax(real, dim=-1)
+    logp_replay = torch.log_softmax(replay, dim=-1)
+    kl = float((logp_real.exp() * (logp_real - logp_replay)).sum().item())
+
+    print(f"[self-check] max|Δlogit| = {diff:.4f} | corr = {corr:.6f} | "
+          f"KL(real||replay) = {kl:.3e} nats | argmax agrees = {agree}")
+
+    # A non-finite comparison is a FAILURE, not a pass. Previously this fell through the
+    # `diff > SELF_CHECK_TOL` branch because NaN > x evaluates False in IEEE 754, so an
+    # fp16 run that produced NaN logits printed "OK". Check explicitly and first.
+    nonfinite = not (math.isfinite(diff) and math.isfinite(corr) and math.isfinite(kl))
+    if nonfinite:
+        print("[self-check] FAIL: the comparison produced a non-finite value "
+              f"(diff={diff}, corr={corr}, KL={kl}). This is a failure, not a pass — "
+              "it usually means the forward pass produced NaN/Inf logits at this dtype. "
+              "J-Lens numbers from this configuration must not be used.")
+    elif diff > SELF_CHECK_TOL or not agree:
+        print(f"[self-check] WARNING: the truncated-stack replay does not match the model "
+              f"(tolerance {SELF_CHECK_TOL}). J-Lens numbers are unreliable — check your "
+              "transformers version, and see jlens_diag.py for a dtype ladder.")
     else:
         print("[self-check] OK — truncated stack faithfully reproduces the model.")
 
