@@ -14,7 +14,7 @@ existence test, so it needs controls:
   3. MAGNITUDE     -- when correct "wins", what are the absolute ranks?
   4. DEPTH PROFILE -- mean rank per layer, failures vs successes.
 
-Ranks are 0-indexed positions in the vocabulary distribution: LOWER = better.
+Ranks are 1-BASED positions in the vocabulary distribution (1 = argmax): LOWER = better.
 "outranks" == strictly smaller rank.
 
 CSV-only. No GPU, no model calls.
@@ -93,13 +93,16 @@ for name, d in [("failures_fullsweep", fail), ("fullsweep_500", mixed)]:
 # still. All layer counts below are read from the data, not assumed.
 N_LAYERS = fail.layer.nunique()
 
-# Vocabulary size estimate, used for the chance baseline in control 3.
+# Vocabulary size, used for the chance baseline in control 3.
+# rank_of() in jlens_probe.py is 1-BASED (1 = argmax), so the largest attainable
+# rank IS the vocabulary size -- no +1. Observed max is 152,064, which matches the
+# Qwen2.5-7B-Instruct vocabulary exactly.
 VOCAB = int(max(
     fail[[f"{L}_rank_{w}" for L in LENSES for w in ("correct", "stale")]].max().max(),
     mixed[[f"{L}_rank_{w}" for L in LENSES for w in ("correct", "stale")]].max().max(),
-)) + 1
-print(f"\n  observed max rank + 1 (vocab-size lower bound): {VOCAB:,}")
-print(f"  layers used for the max: {N_LAYERS}")
+))
+print(f"\n  vocabulary size V (= max attainable 1-based rank): {VOCAB:,}")
+print(f"  residual-stream positions used for the max: {N_LAYERS}  (depths 0..{N_LAYERS-1})")
 
 
 # ---------------------------------------------------------------- helpers
@@ -242,12 +245,12 @@ Definition: per example, pick the layer maximising margin = rank_stale - rank_co
 (the layer where correct wins by the largest margin), then report (rank_correct,
 rank_stale) there. 'best rank' = min over layers of rank_correct.
 
-Chance baseline: for a rank uniform on [0, V) drawn independently at each of the
-%d layers, E[min] ~ (V-1)/(n_layers+1).
+Chance baseline: ranks are 1-BASED (1 = argmax). For a rank uniform on {1..V}
+drawn independently at each of the %d residual-stream positions, E[min] = (V+1)/(n+1).
 """ % N_LAYERS)
 
-chance_min = (VOCAB - 1) / (N_LAYERS + 1)
-print(f"  V (vocab lower bound) = {VOCAB:,}   ->   chance E[best-of-{N_LAYERS} rank] "
+chance_min = (VOCAB + 1) / (N_LAYERS + 1)   # 1-indexed uniform on {1..V}
+print(f"  V (vocabulary size) = {VOCAB:,}   ->   chance E[best-of-{N_LAYERS} rank] "
       f"~ {chance_min:,.0f}\n")
 
 for lens in LENSES:

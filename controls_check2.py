@@ -53,8 +53,9 @@ def hr(t):
 STRATUM = dict(complexity_level=3, entity_type="agent", distractor_position="middle")
 STRATUM_NDIST = [3, 4]
 
-# Layer bands. Layers 0-1 are near-embedding and 24-28 are output-committed: at
-# layer 28 the lens IS the model's decision, so an AUC there is circular by
+# Depth bands. Depths 0-1 are near-embedding and 24-28 are output-committed: at
+# depth 28 the lens IS the model's decision (it is the final residual stream,
+# one norm+unembed from the logits), so an AUC there is circular by
 # construction (round 1 measured exactly 1.000). "Internal" excludes both ends.
 INTERNAL = list(range(2, 24))
 
@@ -140,12 +141,16 @@ nan_all = sum(d[ATTN].isna().sum().sum() for d in (fail, mixed))
 nan_not28 = sum(d[d.layer != 28][ATTN].isna().sum().sum() for d in (fail, mixed))
 hr("MISSING-DATA POLICY (attn_* columns)")
 print(f"""
-  Layer 28 carries NO attention data in either file: all {len(ATTN)} attn_* columns are
-  100% NaN there (the last block's attention output is not captured). That single
-  layer accounts for 1/29 = 3.4% of rows and for {nan_all:,} of {nan_all:,} attn NaNs.
-  Outside layer 28 there are {nan_not28} missing attention values.
+  Depth 28 carries NO attention data in either file: all {len(ATTN)} attn_* columns are
+  100% NaN there. This is structural, not a capture failure. ResidualCapture hooks
+  the INPUT of each of the 28 decoder layers (depths 0..27) plus the OUTPUT of the
+  last one (depth 28), giving 29 residual-stream positions. AttentionCapture hooks
+  layers[i].self_attn for i in 0..27, so attention is indexed by DECODER LAYER and
+  no attention module corresponds to residual position 28. That single depth
+  accounts for 1/29 = 3.4% of rows and for {nan_all:,} of {nan_all:,} attn NaNs.
+  Outside depth 28 there are {nan_not28} missing attention values.
 
-  Policy: the attn_* sweep runs over layers 0..27 and layer 28 is reported as
+  Policy: the attn_* sweep runs over depths 0..27 and depth 28 is reported as
   "no data", never as a zero, a fill, or an omitted row. No other row is dropped,
   because none needs to be. Rank/lens columns have no missing values at any layer.
 """)

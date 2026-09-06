@@ -66,8 +66,8 @@ fullsweep_500:
   outcome (example-level): {'correct': 488, 'stale': 12}
   rank NaNs: logitlens/correct=0, logitlens/stale=0, jlens/correct=0, jlens/stale=0
 
-  observed max rank + 1 (vocab-size lower bound): 152,065
-  layers used for the max: 29
+  vocabulary size V (= max attainable 1-based rank): 152,064
+  residual-stream positions used for the max: 29  (depths 0..28)
 
 ==============================================================================
 CONTROL 1 -- SYMMETRY
@@ -173,10 +173,10 @@ Definition: per example, pick the layer maximising margin = rank_stale - rank_co
 (the layer where correct wins by the largest margin), then report (rank_correct,
 rank_stale) there. 'best rank' = min over layers of rank_correct.
 
-Chance baseline: for a rank uniform on [0, V) drawn independently at each of the
-29 layers, E[min] ~ (V-1)/(n_layers+1).
+Chance baseline: ranks are 1-BASED (1 = argmax). For a rank uniform on {1..V}
+drawn independently at each of the 29 residual-stream positions, E[min] = (V+1)/(n+1).
 
-  V (vocab lower bound) = 152,065   ->   chance E[best-of-29 rank] ~ 5,069
+  V (vocabulary size) = 152,064   ->   chance E[best-of-29 rank] ~ 5,069
 
 ------------------------------------------------------------------------------
 LENS: logitlens
