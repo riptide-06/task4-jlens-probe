@@ -260,10 +260,10 @@ for lens in ("logitlens", "jlens"):
           f"{'BELOW' if obs_grad < null_grad.mean() else 'ABOVE'} the null mean")
     if obs_grad < np.quantile(null_grad, .025):
         print(f"      -> significant in the WRONG direction for the claim: the correct room")
-        print(f"         wins FEWER layers than label-exchange chance.")
+        print(f"         wins FEWER depths than label-exchange chance.")
 
 # ---- NULL B, matched groups, max over internal layers
-print("\n" + SUB); print("NULL B -- outcome label shuffle, max over internal layers 2..23 (MATCHED)"); print(SUB)
+print("\n" + SUB); print("NULL B -- outcome label shuffle, max over internal depths 2..23 (MATCHED)"); print(SUB)
 print(f"  {m_succ.example_id.nunique()} matched successes vs {m_fail.example_id.nunique()} failures\n")
 nullB = {}
 for c in MEASURES:
@@ -468,9 +468,9 @@ for j, c in enumerate(MEASURES):
     axes[0, j].set_title(f"held-out AUC: {c}", fontsize=9); axes[0, j].legend(fontsize=8); axes[0, j].grid(alpha=.3)
     vc = r["vc"].sort_index()
     axes[1, j].bar(vc.index, vc.to_numpy(), color=CB["grey"])
-    axes[1, j].set_title(f"selected layer across {N_SPLIT} splits", fontsize=9)
+    axes[1, j].set_title(f"selected depth across {N_SPLIT} splits", fontsize=9)
     axes[1, j].set_xlabel("selected residual-stream depth"); axes[1, j].grid(alpha=.3, axis="y")
-fig.suptitle("Split-half: held-out AUC and how stable the selected layer is", fontsize=11)
+fig.suptitle("Split-half: held-out AUC and how stable the selected depth is", fontsize=11)
 fig.tight_layout(); savefig(fig, "split_half")
 
 piv = sweep.pivot_table(index="column", columns="layer", values="auc")

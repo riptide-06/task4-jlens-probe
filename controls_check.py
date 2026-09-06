@@ -460,10 +460,10 @@ for lens in LENSES:
 ax.bar(range(len(vals)), vals, color=colors)
 ax.set_xticks(range(len(vals)))
 ax.set_xticklabels(labels, fontsize=6, rotation=45, ha="right")
-ax.set_ylabel("% of examples with >=1 winning layer")
+ax.set_ylabel("% of examples with >=1 winning depth")
 ax.set_ylim(0, 105)
 ax.axhline(100, color="k", ls=":", lw=1)
-ax.set_title("Controls 1 & 2: the '>=1 layer' existence test saturates in every group and both directions")
+ax.set_title("Controls 1 & 2: the '>=1 depth' existence test saturates in every group and both directions")
 ax.grid(axis="y", alpha=0.3)
 fig.tight_layout()
 for ext in ("pdf", "png"):

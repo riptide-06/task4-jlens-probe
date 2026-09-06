@@ -303,9 +303,14 @@ separation measured at the last position is exactly $1.000$ by construction.
 \label{sec:case}
 % =============================================================================
 
-\paragraph{Task and data.} Each record narrates a sequence of entity movements
-and then asks where one entity currently is. Exactly one relocation makes an
-earlier stated location stale; a failure is the model emitting the stale room.
+\paragraph{Task and data.} Each record places a named entity in a room, narrates
+a sequence of movements in which that entity is relocated exactly once, and then
+asks which room it is in now. The relocation makes the earlier stated room
+\emph{stale}; answering correctly requires using the later mention rather than
+the earlier one, and a failure is the model emitting the stale room. Records vary
+in complexity level, in whether the tracked entity is an agent or an object, and
+in the number of distractor mentions ($0$, $3$ or $4$) and their position
+relative to the update.
 The dataset is 5{,}000 synthetic records varying complexity level, entity type
 (agent or object), and the number and position of distractor mentions.
 
