@@ -62,6 +62,9 @@ Controls for Layer-Existence Claims in Mechanistic Interpretability}
 \fi
 
 \begin{document}
+% build.sh compiles a line-number-free anonymous variant SOLELY to diff its text
+% against the named build. This switch is never set for a shipped PDF.
+\ifdefined\DIFFBUILD\nolinenumbers\fi
 \maketitle
 
 \begin{abstract}

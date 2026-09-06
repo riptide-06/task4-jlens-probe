@@ -195,6 +195,31 @@ ICLR 2023 (arXiv metadata verified, venue not).
 
 ---
 
+## 5b. Build desync (Fix 1) — root cause
+
+`main_named.pdf` carried the superseded, UNMATCHED J-lens decomposition values
+(0.911 / 0.425 / 0.578) while `main.pdf` carried the corrected matched ones
+(0.871 / 0.268 / 0.538), for several commits.
+
+**Cause: a build invocation that did not rerun after the correction.** There has
+only ever been one `main.tex`; there was no second source, no stale `.aux`, and
+no hand-edited PDF. The named build was produced once by `cp main.pdf
+main_named.pdf` after flipping `\anonfalse`, and when Section 6 was later
+corrected only the anonymous build was regenerated. Nothing checked the two.
+
+**Fix:** `paper/final/build.sh` is now the only supported build path. It compiles
+both PDFs from the single source in one invocation and diffs their extracted
+text, failing non-zero on any difference outside a documented whitelist (author
+block, notice string, line-number gutter).
+
+One implementation note worth recording: stripping the `lineno` gutter out of
+`pdftotext` output *by pattern* is unsafe — a rule like "leading integer plus two
+spaces" also removes figure axis tick labels (`400  observed G=11.86`), and a
+running-counter version desynchronises on page 1 where the numbers extract
+inline. `build.sh` instead compiles a third, throwaway anonymous build with
+`\DIFFBUILD` set, which suppresses the gutter at the source, and diffs that. The
+shipped `main.pdf` keeps its line numbers for reviewers.
+
 ## 6. Open TODOs
 
 1. ~~Fold the J-lens decomposition into `controls_check2.py`~~ **DONE** (section 4b); the paper now uses matched, reproducible values.
