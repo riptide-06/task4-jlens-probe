@@ -461,10 +461,10 @@ LENS: jlens  -- mean rank per layer (lower = better)
     failures : layers 0-23 mean gap =      -18,102 | last 5 layers =      -11,408
     successes: layers 0-23 mean gap =       15,353 | last 5 layers =       21,896
 
-  saved plot: /Users/tarun/Desktop/TeamHJRA/task 4/reports/depth_profile_logitlens.png
+  saved plot: reports/depth_profile_logitlens.pdf (+ .png)
 
-  saved plot: /Users/tarun/Desktop/TeamHJRA/task 4/reports/depth_profile_jlens.png
-  saved plot: /Users/tarun/Desktop/TeamHJRA/task 4/reports/control_saturation.png
+  saved plot: reports/depth_profile_jlens.pdf (+ .png)
+  saved plot: reports/control_saturation.pdf (+ .png)
 
 ==============================================================================
 SUMMARY / VERDICT

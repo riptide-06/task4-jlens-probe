@@ -241,7 +241,37 @@ attention is the expected direction; ranking is by |AUC - 0.5|.
     attn_argmax_head_correct     L23  AUC=0.821
     attn_entropy                 L19  AUC=0.222
 
-  saved: auc_raw_vs_matched.png, perm_null_B.png, split_half.png, attn_sweep_matched.png
+==============================================================================
+4b. J-LENS DECOMPOSITION (is it a disguised readout of the output?)
+==============================================================================
+
+jlens_i = f_i(0) + J.h_i, where f_i runs decoder layers i..28 with the real KV
+cache. By construction it includes the entire downstream network, so a natural
+worry is that its predictive power is just a laundered read of the model's final
+decision rather than anything local to depth i.
+
+Two checks. (1) Cross-depth rank correlation of the margin within an example: if
+a shared example-level component (the f_i(0) anchor, or the context) dominated,
+J-lens margins would be MORE correlated across depths than logit-lens margins.
+(2) Remove each example's cross-depth mean and re-test: whatever separation
+survives is depth-specific and cannot come from a shared component.
+
+  (matched groups: 72 successes, 137 failures)
+
+  logitlens  mean |cross-depth rank corr| over depths 2..23 = 0.538  (median 0.553)
+  jlens      mean |cross-depth rank corr| over depths 2..23 = 0.268  (median 0.238)
+
+  jlens_margin       depth  5: matched AUC = 0.888 | depth-specific DEVIATION AUC = 0.871
+  logitlens_margin   depth 18: matched AUC = 0.703 | depth-specific DEVIATION AUC = 0.644
+
+  Reading: if J-lens were a disguised output readout, the deviation AUC would
+  collapse toward 0.5 and its cross-depth correlation would exceed the logit
+  lens's. Neither happens. The signal is genuinely depth-local. What this does
+  NOT license is the phrase "represented at depth 5": f_i still executes layers
+  i..28, so the supported claim is "decodable THROUGH the remaining network".
+
+
+  saved (pdf + png): auc_raw_vs_matched, perm_null_B, split_half, attn_sweep_matched
 
 ==============================================================================
 VERDICT ON THE TWO SURVIVING SIGNALS

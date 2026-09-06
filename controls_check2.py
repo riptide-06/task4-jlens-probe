@@ -377,57 +377,112 @@ for c in ATTN:
     print(f"    {c:<28} L{int(b.layer):<2d}  AUC={b.auc:.3f}")
 
 
+# ================================================ 4b. WHAT DOES J-LENS MEASURE?
+hr("4b. J-LENS DECOMPOSITION (is it a disguised readout of the output?)")
+print("""
+jlens_i = f_i(0) + J.h_i, where f_i runs decoder layers i..28 with the real KV
+cache. By construction it includes the entire downstream network, so a natural
+worry is that its predictive power is just a laundered read of the model's final
+decision rather than anything local to depth i.
+
+Two checks. (1) Cross-depth rank correlation of the margin within an example: if
+a shared example-level component (the f_i(0) anchor, or the context) dominated,
+J-lens margins would be MORE correlated across depths than logit-lens margins.
+(2) Remove each example's cross-depth mean and re-test: whatever separation
+survives is depth-specific and cannot come from a shared component.
+""")
+_pool = pd.concat([m_fail.assign(grp="fail"), m_succ.assign(grp="succ")], ignore_index=True)
+print(f"  (matched groups: {m_succ.example_id.nunique()} successes, {m_fail.example_id.nunique()} failures)\n")
+for lens in ("logitlens", "jlens"):
+    c = f"{lens}_margin"
+    piv = _pool.pivot_table(index=["grp", "example_id"], columns="layer", values=c)
+    C = piv[INTERNAL].corr(method="spearman").to_numpy()
+    off = C[~np.eye(len(C), dtype=bool)]
+    print(f"  {lens:10s} mean |cross-depth rank corr| over depths 2..23 = "
+          f"{np.abs(off).mean():.3f}  (median {np.median(np.abs(off)):.3f})")
+print()
+for c, L in (("jlens_margin", 5), ("logitlens_margin", 18)):
+    band = _pool[_pool.layer.between(2, 23)].copy()
+    band["dev"] = band[c] - band.groupby(["grp", "example_id"])[c].transform("mean")
+    at = band[band.layer == L]
+    raw = auc_pos_neg(layer_vec(m_succ, L, c), layer_vec(m_fail, L, c))
+    dev = auc_pos_neg(at[at.grp == "succ"].dev.to_numpy(), at[at.grp == "fail"].dev.to_numpy())
+    print(f"  {c:18s} depth {L:2d}: matched AUC = {raw:.3f} | "
+          f"depth-specific DEVIATION AUC = {dev:.3f}")
+print("""
+  Reading: if J-lens were a disguised output readout, the deviation AUC would
+  collapse toward 0.5 and its cross-depth correlation would exceed the logit
+  lens's. Neither happens. The signal is genuinely depth-local. What this does
+  NOT license is the phrase "represented at depth 5": f_i still executes layers
+  i..28, so the supported claim is "decodable THROUGH the remaining network".
+""")
+
+
 # ==================================================================== 5. PLOTS
+# Okabe-Ito colorblind-safe palette, shared with sim/existence_null_sim.py.
+CB = {"blue": "#0072B2", "orange": "#E69F00", "green": "#009E73",
+      "red": "#D55E00", "purple": "#CC79A7", "grey": "#666666"}
+
+
+def savefig(fig, stem):
+    """Vector PDF for the paper plus a PNG preview. Fonts embedded (Type 42)."""
+    matplotlib.rcParams["pdf.fonttype"] = 42
+    matplotlib.rcParams["ps.fonttype"] = 42
+    for ext in ("pdf", "png"):
+        fig.savefig(os.path.join(REPORTS, f"{stem}.{ext}"), dpi=200, bbox_inches="tight")
+    plt.close(fig)
+
+
 def theme(ax):
     ax.grid(alpha=.3); ax.axhline(.5, color="k", ls=":", lw=1)
 
 fig, axes = plt.subplots(1, 3, figsize=(16, 4.6))
 for ax, c in zip(axes, MEASURES):
-    ax.plot(raw_matched.layer, raw_matched[f"{c}|raw"], "-o", ms=3.5, color="#c0392b", label="raw (488 succ)")
-    ax.plot(raw_matched.layer, raw_matched[f"{c}|matched"], "-s", ms=3.5, color="#1f6f8b", label="matched (72 succ)")
+    ax.plot(raw_matched.layer, raw_matched[f"{c}|raw"], "-o", ms=3.5, color=CB["red"], label="raw (488 succ)")
+    ax.plot(raw_matched.layer, raw_matched[f"{c}|matched"], "-s", ms=3.5, color=CB["blue"], label="matched (72 succ)")
     ax.axvspan(24, 28, color="grey", alpha=.18)
     ax.axvspan(-.5, 1.5, color="grey", alpha=.18)
-    ax.set_title(c, fontsize=10); ax.set_xlabel("layer"); ax.set_ylabel("AUC succ vs fail")
+    ax.set_title(c, fontsize=10); ax.set_xlabel("residual-stream depth"); ax.set_ylabel("AUC (success vs failure)")
     ax.set_ylim(0, 1); theme(ax); ax.legend(fontsize=8)
 fig.suptitle("Confound size: raw vs condition-matched AUC (grey = near-embedding / output-committed)", fontsize=11)
-fig.tight_layout(); fig.savefig(os.path.join(REPORTS, "auc_raw_vs_matched.png"), dpi=150); plt.close(fig)
+fig.tight_layout(); savefig(fig, "auc_raw_vs_matched")
 
 fig, axes = plt.subplots(1, 3, figsize=(16, 4.4))
 for ax, c in zip(axes, MEASURES):
     d = nullB[c]
-    ax.hist(d["perm_max"], bins=50, color="#95a5a6", edgecolor="white")
-    ax.axvline(d["obs_max"], color="#c0392b", lw=2,
+    ax.hist(d["perm_max"], bins=50, color=CB["grey"], alpha=.8, edgecolor="white")
+    ax.axvline(d["obs_max"], color=CB["red"], lw=2,
                label=f"observed L{d['obs_L']} = {d['obs_max']:.3f}\np = {d['p']:.4f}")
     ax.set_title(f"Null B: {c}", fontsize=10)
-    ax.set_xlabel("max |AUC-0.5| over layers 2..23"); ax.set_ylabel("permutations")
+    ax.set_xlabel("max |AUC-0.5| over depths 2..23"); ax.set_ylabel("permutations")
     ax.legend(fontsize=8); ax.grid(alpha=.3)
 fig.suptitle("Permutation null B (outcome-label shuffle), selection-corrected over the internal band", fontsize=11)
-fig.tight_layout(); fig.savefig(os.path.join(REPORTS, "perm_null_B.png"), dpi=150); plt.close(fig)
+fig.tight_layout(); savefig(fig, "perm_null_B")
 
 fig, axes = plt.subplots(2, 3, figsize=(16, 8))
 for j, c in enumerate(MEASURES):
     r = split_res[c]
-    axes[0, j].hist(r["held"], bins=40, color="#1f6f8b", edgecolor="white")
-    axes[0, j].axvline(np.mean(r["held"]), color="#c0392b", lw=2, label=f"mean {np.mean(r['held']):.3f}")
+    axes[0, j].hist(r["held"], bins=40, color=CB["blue"], edgecolor="white")
+    axes[0, j].axvline(np.mean(r["held"]), color=CB["red"], lw=2, label=f"mean {np.mean(r['held']):.3f}")
     axes[0, j].axvline(.5, color="k", ls=":", lw=1)
     axes[0, j].set_title(f"held-out AUC: {c}", fontsize=9); axes[0, j].legend(fontsize=8); axes[0, j].grid(alpha=.3)
     vc = r["vc"].sort_index()
-    axes[1, j].bar(vc.index, vc.to_numpy(), color="#7f8c8d")
+    axes[1, j].bar(vc.index, vc.to_numpy(), color=CB["grey"])
     axes[1, j].set_title(f"selected layer across {N_SPLIT} splits", fontsize=9)
-    axes[1, j].set_xlabel("layer"); axes[1, j].grid(alpha=.3, axis="y")
+    axes[1, j].set_xlabel("selected residual-stream depth"); axes[1, j].grid(alpha=.3, axis="y")
 fig.suptitle("Split-half: held-out AUC and how stable the selected layer is", fontsize=11)
-fig.tight_layout(); fig.savefig(os.path.join(REPORTS, "split_half.png"), dpi=150); plt.close(fig)
+fig.tight_layout(); savefig(fig, "split_half")
 
 piv = sweep.pivot_table(index="column", columns="layer", values="auc")
 fig, ax = plt.subplots(figsize=(15, 4.6))
 im = ax.imshow(piv.to_numpy(), aspect="auto", cmap="RdBu_r", vmin=0, vmax=1)
 ax.set_xticks(range(len(piv.columns))); ax.set_xticklabels(piv.columns, fontsize=7)
 ax.set_yticks(range(len(piv.index))); ax.set_yticklabels(piv.index, fontsize=8)
-ax.set_xlabel("layer (28 blank = no data)")
+ax.set_xlabel("residual-stream depth (28 blank: no attention module)")
 ax.set_title("attn_* discrimination, matched groups (AUC; red = higher in successes, blue = higher in failures)", fontsize=10)
 fig.colorbar(im, ax=ax, label="AUC")
-fig.tight_layout(); fig.savefig(os.path.join(REPORTS, "attn_sweep_matched.png"), dpi=150); plt.close(fig)
-print("\n  saved: auc_raw_vs_matched.png, perm_null_B.png, split_half.png, attn_sweep_matched.png")
+fig.tight_layout(); savefig(fig, "attn_sweep_matched")
+print("\n  saved (pdf + png): auc_raw_vs_matched, perm_null_B, split_half, attn_sweep_matched")
 
 
 # ================================================================= 5. VERDICT
