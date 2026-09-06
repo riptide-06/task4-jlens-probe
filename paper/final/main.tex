@@ -468,7 +468,11 @@ The probe ships a self-check that replays the truncated stack from depth 0 and
 compares against the real forward pass. \textbf{It was not enabled for any of the
 three runs behind this paper} --- all three configurations record
 \code{self\_check: false}. We therefore have no replay validation for the J-lens
-numbers reported here, and we label them provisional. Auditing that code for this
+numbers reported here, and we label them provisional. A separate diagnostic
+invocation of the self-check on bfloat16 did exceed the check's own threshold;
+that output was not committed and could not be reproduced without GPU access, so
+we report it here only as a further reason for the provisional label and cite no
+number from it. Auditing that code for this
 paper also surfaced two defects, now fixed: the failure branch compared
 \code{diff > 0.5}, and since \code{nan > 0.5} is false in IEEE 754, a run whose
 logits went non-finite printed ``OK''; and the docstring named a tolerance of
@@ -570,10 +574,20 @@ choices follow \citet{zhang2024patching}. Script: \code{patch\_probe.py}.
 \section{J-lens replay diagnostic}
 \label{app:jlens}
 \code{jlens\_diag.py} runs bf16 and fp16 arms plus a small-model dtype ladder and
-computes KL between the replayed and real softmaxes. If fp32 gives KL on the
-order of $10^{-4}$ while bf16 is order 1, the discrepancy is numerical precision
-rather than a fault in the truncated stack. \textbf{Not run: no GPU was
-available.}
+computes KL between the replayed and real softmaxes in both directions.
+\textbf{It remains unrun: no CUDA device was available for this work}, and the
+one diagnostic invocation the authors did perform (Section~\ref{sec:limits}) was
+not committed, so nothing from it is cited.
+
+What running it would settle. If fp32 gives KL on the order of $10^{-4}$ while
+bf16 is order 1 at the same tolerance, the discrepancy is numerical precision in
+the replay rather than a fault in the truncated stack, and the depth-5 J-lens
+result loses its provisional label. If instead the KL stays large in fp32, the
+truncated stack does not faithfully reproduce the model and every J-lens number
+in this paper must be withdrawn --- the attention results, which do not depend on
+J-lens, would be unaffected either way. The repaired self-check
+(Section~\ref{sec:limits}) should be run on a fixed seeded set of at least 20
+records at the same time, so the two agree on a single tolerance.
 
 \section{Reproduction}
 \label{app:repro}

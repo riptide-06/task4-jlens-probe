@@ -175,6 +175,28 @@ depend on J-lens.
 
 ---
 
+## 4b. Uncommitted observations reported by the author
+
+Recorded here for completeness. **These are unsourced: no committed script,
+output file, notebook cell or git object in this repository contains them, and
+none could be reproduced without a CUDA device. They are excluded from the
+paper**, which states only that a separate diagnostic invocation exceeded the
+check's threshold and cites no number.
+
+- bf16 arm: the self-check reported `max|Δlogit|` **above** the 0.5 threshold,
+  with correlation ≈0.999 and argmax agreement. (Argmax agreement plus high
+  correlation alongside a large max-difference is the signature of a deep-tail
+  token dominating the maximum, which is exactly why the repaired check now also
+  reports KL.)
+- fp16 arm: produced **non-finite logits**, and `out=other` on all records. This
+  is the case the old code reported as "OK", because `nan > 0.5` is False. Fixed
+  in commit `31d6d07`; a non-finite comparison is now an explicit FAIL.
+
+Neither observation is usable as evidence in its current state. Fix 2.4 (run the
+repaired check on ≥20 seeded records and commit
+`reports/self_check_bf16.json`) **was skipped: `nvidia-smi` is absent on this
+machine.** See "Skipped / partial".
+
 ## 5. Unverified references
 
 **None.** All 15 entries in `refs.bib` were verified on 2026-09-06 against arXiv
@@ -235,3 +257,12 @@ shipped `main.pdf` keeps its line numbers for reviewers.
 5. **Confirm author list and affiliation** in the non-anonymized build.
 6. **Set the venue** — `\venuename` and the track option in `main.tex`.
 7. **Re-check the page count** if the track option changes.
+
+---
+
+## 7. Skipped / partial
+
+| Item | Status | Why |
+|---|---|---|
+| Fix 2.4 — run repaired self-check on ≥20 seeded records, commit `reports/self_check_bf16.json` | **Skipped** | `nvidia-smi` absent; no CUDA device on this machine. The one-sentence disclosure path was taken instead, citing no number. |
+| Appendix C — fill with `jlens_diag.py` results | **Skipped** | Same. Appendix C now states it remains unrun and what running it would settle either way. |
