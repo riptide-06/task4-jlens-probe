@@ -1,3 +1,35 @@
+> ## ⚠️ SUPERSEDED — read before citing anything below
+>
+> **The headline result of this report does not survive its own controls, and has been
+> retracted by the authors.** The claim that *"in 100% of stale-output failures (137/137),
+> the correct updated state is decodable from the model's internal representations"* is an
+> existence test taken as a maximum over 29 residual-stream positions. It fails four
+> controls:
+>
+> 1. **Symmetry.** The *stale* state also outranks the correct state in at least one depth
+>    in 137/137 failures. The test fires in both directions in every example.
+> 2. **Discrimination.** The same test fires in 488/488 successes. It separates nothing.
+> 3. **Permutation null.** Under a whole-example label swap the statistic is *invariant*,
+>    so its null is a point mass and no test is possible. Its graded form is significant
+>    **in the opposite direction**: the correct state wins fewer depths than chance.
+> 4. **Confound.** The failure/success comparisons below are unmatched. All 137 failures
+>    sit in one condition cell; ~70% of successes have no distractors.
+>
+> The two reported "mean best rank" figures (47,343 and 2.3) are the same lens on the same
+> 137 examples and differ only in the depth set swept.
+>
+> **What survives**, on condition-matched and selection-corrected analysis: attention mass
+> differential at depth 22, and (provisionally) J-lens margin at depth 5. Both are
+> correlational.
+>
+> See `paper/final/main.pdf`, and `controls_check.py` / `controls_check2.py` for the
+> analysis. The attention section of this report was already corrected once (commit
+> c8d256a) for the same class of confound.
+>
+> This document is retained unaltered below as a record of the superseded analysis.
+
+---
+
 # Task 4 Online Verification Report: J-Lens Probing on GPU
 
 **Project:** Mechanistic interpretability of stale-state retention in LLM agents

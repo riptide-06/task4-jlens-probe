@@ -1,4 +1,6 @@
-# Qwen3 support landed in transformers 4.51.0 — this is a hard floor.
+# Floor inherited from an earlier Qwen3 plan (Qwen3 landed in transformers 4.51.0).
+# Every run in outputs/ uses Qwen2.5-7B-Instruct (Qwen2 arch, supported since 4.37) on
+# transformers 5.14.1. Conservative, not load-bearing for the published results.
 transformers>=4.51.0
 accelerate>=0.34
 torch>=2.1

@@ -54,7 +54,13 @@ python jlens_probe.py \
 python analyze_results.py outputs/run1 --plot
 ```
 
-`transformers >= 4.51.0` is a hard requirement — that release added the Qwen3 architecture.
+`transformers >= 4.51.0` is the declared floor, but note what it is and is not doing.
+That release added the **Qwen3** architecture, and the floor is inherited from an earlier
+plan to probe Qwen3. Every run in `outputs/` uses **Qwen2.5-7B-Instruct**, whose `Qwen2`
+architecture has been supported since transformers 4.37, and all three were executed on
+transformers **5.14.1** (see each run's `config.json`). The 4.51 floor is therefore
+conservative rather than load-bearing for the published results. Raise it only against a
+measured incompatibility.
 
 ---
 
@@ -116,12 +122,14 @@ probe appends an entity-aware prefill that ends exactly where the room name must
 
 ```
 <|im_start|>assistant
-<think>
-
-</think>
-
 The encrypted laptop is currently in the      <- readout position t
 ```
+
+(An earlier revision of this README showed an empty `<think>` / `</think>` pair here.
+That belongs to Qwen3's chat template. Qwen2.5-7B-Instruct, the model used for every run
+in `outputs/`, has no thinking block, and `apply_chat_template` does not accept
+`enable_thinking` for it — `build_text` catches the `TypeError` and falls back. The
+prefill above is what is actually tokenized.)
 
 Objects get the article (`The rusty key`), agents do not (`Drone R-7`), matching the
 generator's `entity_type` convention. `--target-mode generate` instead lets the model
@@ -301,9 +309,12 @@ because only the KV-cache read scales with `T`.
   does not by itself prove the model *could* have used it.
 * **Attention aggregation.** `attn_*` columns average over heads; a single head carrying
   the signal will look weak there. Use `heads.csv` for head-level claims.
-* **Chat template.** `--prompt-format chat` suppresses Qwen3's `<think>` block so the
-  readout position is deterministic. With thinking enabled the model reasons before
-  answering, and the single-position readout no longer captures the decision.
+* **Chat template.** `--enable-thinking` is a **Qwen3** switch and has no effect on
+  Qwen2.5-7B-Instruct, the model behind every run in `outputs/`: its template does not
+  accept the argument, so `build_text` falls back to a plain `apply_chat_template`. The
+  caveat still applies if you point this probe at a Qwen3 checkpoint — with thinking
+  enabled the model reasons before answering and the single-position readout no longer
+  captures the decision.
 
 ---
 
