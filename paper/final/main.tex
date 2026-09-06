@@ -374,15 +374,16 @@ For each measure we use the margin between $c$ and $s$.
 \toprule
 Control & What it asks & Result \\
 \midrule
-Symmetry & Does $E$ also hold with $c$ and $s$ swapped? & \no{137/137 $=100\%$} \\
-Discrimination & Does $E$ also hold on successes?      & \no{488/488 $=100\%$} \\
-Null A, $E$    & Is $E$ testable under label swap?      & \no{point mass, $p=1.00$} \\
-Null A, $G$    & Is the graded form as claimed?         & \no{$10.93$ vs null $14.48$, $p<10^{-4}$} \\
+\textbf{Symmetry}       & Does $E$ also hold with $c$ and $s$ swapped? & \no{137/137 $=100\%$} \\
+\textbf{Discrimination} & Does $E$ also hold on successes?             & \no{488/488 $=100\%$} \\
+\textbf{Null A, $E$}    & Is $E$ testable under the label swap?        & \no{point mass, $p=1.00$} \\
+\textbf{Null A, $G$}    & Is the graded form as claimed?               & \no{$10.93$ vs null $14.48$, $p<10^{-4}$} \\
 \bottomrule
 \end{tabular}
-\caption{The four controls on the original claim (logit lens; J-lens is
-identical on the first three and gives $G=8.41$ vs null $14.34$, $p<10^{-4}$).
-Every entry falsifies the claim.}
+\caption{The four controls on the original claim, referred to throughout by the
+names in the first column (logit lens; J-lens is identical on Symmetry,
+Discrimination and Null A\,$E$, and gives $G=8.41$ vs null $14.34$, $p<10^{-4}$
+on Null A\,$G$). Every entry falsifies the claim.}
 \label{tab:controls}
 \end{table}
 
@@ -429,10 +430,11 @@ full depth and $682$ of $4{,}853$ in the three-depth run; all 137 failures
 already lie inside it. Figure~\ref{fig:rawmatched} shows the cost of ignoring
 this: at depth 13 the J-lens AUC falls from $0.952$ to $0.700$ under matching.
 
-Controls 1 and 3 above are within-failure analyses and are untouched by the
-confound; control 2's conclusion also stands, since a statistic at $100\%$ in
-both arms cannot be rescued by rebalancing. What the confound invalidates is
-every \emph{magnitude} computed on unmatched groups.
+The \emph{symmetry} control and both \emph{Null A} tests are
+within-failure analyses and are untouched by the confound; the
+\emph{discrimination} control's conclusion also stands, since a statistic at
+$100\%$ in both arms cannot be rescued by rebalancing. What the confound
+invalidates is every \emph{magnitude} computed on unmatched groups.
 
 \begin{figure}[t]
 \centering
