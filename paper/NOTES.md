@@ -103,13 +103,19 @@ output file; none was typed from memory.
 |---|---|---|
 | 5,112 s total (1.42 h); 3.52 / 3.49 / 0.577 s per record | §4, checklist item 8 | `total_elapsed_sec`, `sec_per_record` |
 
-### From `reports/existence_null_sim_output.txt` (sim)
-| Number | Where | Locate |
+### From `reports/sim_summary.json` (sim/existence_null_sim.py)
+| Number | Where | Locate (JSON key) |
 |---|---|---|
-| P(E=1) = 0.9740 at L=29 | §3 | "(a) P(E=1) for two EXCHANGEABLE" |
-| ~92% with c genuinely worse | §3 | panel (a), offset −0.75 curve |
-| E null sd 5e-4; G 11.86 vs 14.50 | §3 | "(b) Null A at L = 29" |
-| E stays above 0.88 across offsets | §3 | "(c) Sensitivity" |
+| P(E=1) at L=29, exchangeable: 0.840–1.000 | §3 | `panel_a_exchangeable_range_at_L29` |
+| P(E=1) = 0.9145 when c genuinely worse | §3 | `panel_a_P_E_at_L29["c_genuinely_worse_offset_-0.75"]` |
+| E observed 0.998, null 0.999, sd 5.0e-4 | §3 | `panel_b_null_A.E_*` |
+| G observed 11.86, null 14.50, sd 0.138 | §3 | `panel_b_null_A.G_*` |
+| E ranges 0.888–0.995; G/L 0.318–0.685 | §3 | `panel_c_offsets` |
+
+**Correction made here:** the draft said P(E=1) at L=29 was "0.97–1.00 depending
+on noise". The measured range is **0.840–1.000** — the noise=0.5 curve reaches
+only 0.8395, which the draft had not accounted for. Text now matches the JSON
+exactly.
 
 ### From `outputs/*/config.json`
 Model `Qwen/Qwen2.5-7B-Instruct`, bf16, `attn_impl: eager`, chat format,

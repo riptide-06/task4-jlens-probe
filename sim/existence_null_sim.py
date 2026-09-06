@@ -22,6 +22,7 @@ Panels
 Seeded and deterministic. Writes a vector PDF plus a PNG preview.
 """
 from __future__ import annotations
+import json
 import os
 import numpy as np
 import matplotlib
@@ -110,7 +111,7 @@ def main():
     ax.set_xlabel(r"mean $G$ under Null A"); ax.set_ylabel("permutations")
     ax.set_title(r"(b) $G$ has a null; $E$ does not", fontsize=10)
     ax.grid(alpha=.3); ax.legend(fontsize=7, loc="upper right")
-    ax.text(.03, .55,
+    ax.text(.22, .34,
             f"$E$: observed {Ec.mean():.3f}, null mass at {nullE.mean():.3f}\n"
             f"(sd {nullE.std():.1e}) -- no separation.\n"
             f"$G$ separates at the same effect.",
@@ -131,7 +132,7 @@ def main():
     ax.set_xlabel("true offset of $c$ relative to $s$")
     ax.set_ylabel("statistic value")
     ax.set_title("(c) $E$ is blind to the effect size", fontsize=10)
-    ax.set_ylim(0, 1.03); ax.grid(alpha=.3); ax.legend(fontsize=7, loc="center right")
+    ax.set_ylim(0, 1.03); ax.grid(alpha=.3); ax.legend(fontsize=7, loc="lower right", framealpha=.95)
 
     fig.suptitle("The existence-over-depth statistic has no usable null; the graded form does",
                  fontsize=11, y=1.02)
@@ -167,7 +168,37 @@ def main():
         print(f"      offset {off:+.1f} : E = {e.mean():.4f}   G/L = {g.mean()/L_REAL:.3f}")
     print("\n    E is pinned near 1 across the whole range, including where c is")
     print("    genuinely WORSE than s. G tracks the offset monotonically.")
-    print("\nsaved: reports/existence_null_sim.pdf (+ .png)")
+
+    # ------------------------------------------------- machine-readable summary
+    summary = {
+        "seed": SEED, "n_examples": N_EX, "n_perm": N_PERM, "L_real": L_REAL,
+        "panel_a_P_E_at_L29": {
+            "exchangeable_noise_0.5": float(simulate(N_EX, L_REAL, 0.5, 0.0, np.random.default_rng(SEED + L_REAL))[0].mean()),
+            "exchangeable_noise_1.0": float(simulate(N_EX, L_REAL, 1.0, 0.0, np.random.default_rng(SEED + L_REAL))[0].mean()),
+            "exchangeable_noise_2.0": float(simulate(N_EX, L_REAL, 2.0, 0.0, np.random.default_rng(SEED + L_REAL))[0].mean()),
+            "c_genuinely_worse_offset_-0.75": float(simulate(N_EX, L_REAL, 1.0, -0.75, np.random.default_rng(SEED + L_REAL))[0].mean()),
+        },
+        "panel_b_null_A": {
+            "noise": NOISE_B, "offset": OFFSET_B,
+            "E_observed": float(Ec.mean()), "E_null_mean": float(nullE.mean()),
+            "E_null_sd": float(nullE.std()),
+            "G_observed": float(Gc.mean()), "G_null_mean": float(nullG.mean()),
+            "G_null_sd": float(nullG.std()),
+        },
+        "panel_c_offsets": {f"{off:+.1f}": {
+            "E": float(simulate(N_EX, L_REAL, 1.0, off, np.random.default_rng(SEED + int((off + 2) * 1000)))[0].mean()),
+            "G_over_L": float(simulate(N_EX, L_REAL, 1.0, off, np.random.default_rng(SEED + int((off + 2) * 1000)))[1].mean() / L_REAL),
+        } for off in (-1.0, -0.5, 0.0, 0.5, 1.0)},
+    }
+    a = summary["panel_a_P_E_at_L29"]
+    lo, hi = min(a[k] for k in a if k.startswith("exch")), max(a[k] for k in a if k.startswith("exch"))
+    summary["panel_a_exchangeable_range_at_L29"] = [lo, hi]
+    json.dump(summary, open(os.path.join(OUT, "sim_summary.json"), "w"), indent=2)
+    print(f"\n  P(E=1) at L={L_REAL}, exchangeable, across noise levels: "
+          f"{lo:.4f} to {hi:.4f}")
+    print(f"  P(E=1) at L={L_REAL} when c is genuinely worse (offset -0.75): "
+          f"{a['c_genuinely_worse_offset_-0.75']:.4f}")
+    print("\nsaved: reports/existence_null_sim.pdf (+ .png), reports/sim_summary.json")
 
 
 if __name__ == "__main__":

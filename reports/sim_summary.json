@@ -1,0 +1,48 @@
+{
+  "seed": 20260906,
+  "n_examples": 2000,
+  "n_perm": 5000,
+  "L_real": 29,
+  "panel_a_P_E_at_L29": {
+    "exchangeable_noise_0.5": 0.8395,
+    "exchangeable_noise_1.0": 0.974,
+    "exchangeable_noise_2.0": 1.0,
+    "c_genuinely_worse_offset_-0.75": 0.9145
+  },
+  "panel_b_null_A": {
+    "noise": 2.0,
+    "offset": -0.75,
+    "E_observed": 0.998,
+    "E_null_mean": 0.9989872,
+    "E_null_sd": 0.0004997360903516971,
+    "G_observed": 11.862,
+    "G_null_mean": 14.499480500000002,
+    "G_null_sd": 0.13841027660455707
+  },
+  "panel_c_offsets": {
+    "-1.0": {
+      "E": 0.888,
+      "G_over_L": 0.31805172413793104
+    },
+    "-0.5": {
+      "E": 0.9385,
+      "G_over_L": 0.4046206896551724
+    },
+    "+0.0": {
+      "E": 0.9675,
+      "G_over_L": 0.5154655172413792
+    },
+    "+0.5": {
+      "E": 0.9875,
+      "G_over_L": 0.6087241379310344
+    },
+    "+1.0": {
+      "E": 0.995,
+      "G_over_L": 0.6851379310344827
+    }
+  },
+  "panel_a_exchangeable_range_at_L29": [
+    0.8395,
+    1.0
+  ]
+}

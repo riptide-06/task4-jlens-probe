@@ -31,4 +31,7 @@ EXISTENCE-NULL SIMULATION  (seed 20260906, 2000 examples, 5000 permutations)
     E is pinned near 1 across the whole range, including where c is
     genuinely WORSE than s. G tracks the offset monotonically.
 
-saved: reports/existence_null_sim.pdf (+ .png)
+  P(E=1) at L=29, exchangeable, across noise levels: 0.8395 to 1.0000
+  P(E=1) at L=29 when c is genuinely worse (offset -0.75): 0.9145
+
+saved: reports/existence_null_sim.pdf (+ .png), reports/sim_summary.json
