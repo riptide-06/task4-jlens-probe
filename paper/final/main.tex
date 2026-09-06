@@ -120,9 +120,15 @@ vocabulary space and ask what the model ``already knows'' partway through its
 computation. When the correct answer ranks above a competitor at some
 intermediate depth but loses at the output, it is natural to conclude that the
 information was present internally and that something went wrong at readout.
-Claims of this shape appear across the literature, including in work arguing
-that language models encode the correct answer while emitting an incorrect one
-\citep{orgad2024llmsknow}.
+Conclusions of this shape appear across the
+literature: \citet{orgad2024llmsknow}, for instance, report that a model may
+encode the correct answer yet consistently generate an incorrect one. They reach
+it by a different route --- probing classifiers trained on intermediate
+representations at the exact-answer tokens, and an answer-selection experiment
+that uses the probe to pick among sampled responses --- not by a rank comparison
+across depths. We cite them as an example of the \emph{conclusion}, not of the
+statistic. The existence-over-depth statistic is one common route to conclusions
+of this kind, and it is the route this paper examines.
 
 The inference has a structural problem that is independent of the model, the
 lens, and the task. Written out, the statistic is

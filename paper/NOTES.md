@@ -237,6 +237,26 @@ logged. The author reports **A100-40GB** and roughly 3.5 s/record at 29 depths,
 unsourced** and is therefore not in the paper. Checklist item 8 says exactly
 what is recorded.
 
+## 4d. What Orgad et al. (2024) actually do (Fix 6)
+
+Checked against the full text of arXiv:2410.02707v2 (fetched and extracted, not
+from the abstract). Their method is **probing classifiers**, not a rank test:
+
+- "a classifier trained on intermediate LLM representations within the exact
+  answer tokens, referred to as 'probing classifiers'" (§1).
+- The encoding-vs-behaviour result uses sampling plus probe-based selection:
+  they "sample K = 30 responses at a temperature setting of T = 1" and then
+  "use our probe, trained on error detection, to select an answer from a pool of
+  30 generated responses" (§5-6).
+- **The string "logit lens" occurs zero times in the paper.** There is no
+  max-over-layers rank comparison anywhere in it.
+
+The draft's Section 1 sentence read as though they relied on the
+existence-over-depth statistic. Rewritten to cite them as an example of the
+**conclusion type only**, explicitly naming their different route, and stating
+that the existence statistic is one common route to such conclusions and the one
+this paper examines. No reference added or changed in refs.bib.
+
 ## 5. Unverified references
 
 **None.** All 15 entries in `refs.bib` were verified on 2026-09-06 against arXiv
