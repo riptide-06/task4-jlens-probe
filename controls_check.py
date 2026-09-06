@@ -431,18 +431,19 @@ for lens in LENSES:
                 label="SUCC: stale room")
         ax.set_yscale("log")
         ax.invert_yaxis()   # better ranks (smaller) at the top
-        ax.set_xlabel("layer")
-        ax.set_ylabel(f"{stat} rank (log, inverted: higher = better)")
+        ax.set_xlabel("residual-stream depth")
+        ax.set_ylabel(f"{stat} rank  (log scale, axis INVERTED:\nhigher on the plot = better rank = smaller number)", fontsize=8)
         ax.set_title(f"{title} -- {lens}")
         ax.grid(alpha=0.3, which="both")
         ax.legend(fontsize=8)
     fig.suptitle(f"Depth profile ({lens}): failures (n={fail.example_id.nunique()}, unmatched) "
                  f"vs successes (n={mixed_succ.example_id.nunique()})", fontsize=11)
     fig.tight_layout()
-    p = os.path.join(REPORTS, f"depth_profile_{lens}.png")
-    fig.savefig(p, dpi=150)
+    matplotlib.rcParams["pdf.fonttype"] = 42
+    for ext in ("pdf", "png"):
+        fig.savefig(os.path.join(REPORTS, f"depth_profile_{lens}.{ext}"), dpi=200, bbox_inches="tight")
     plt.close(fig)
-    print(f"\n  saved plot: {p}")
+    print(f"\n  saved plot: reports/depth_profile_{lens}.pdf (+ .png)")
 
 # Control-summary bar chart
 fig, ax = plt.subplots(figsize=(10, 5))
@@ -465,10 +466,10 @@ ax.axhline(100, color="k", ls=":", lw=1)
 ax.set_title("Controls 1 & 2: the '>=1 layer' existence test saturates in every group and both directions")
 ax.grid(axis="y", alpha=0.3)
 fig.tight_layout()
-p = os.path.join(REPORTS, "control_saturation.png")
-fig.savefig(p, dpi=150)
+for ext in ("pdf", "png"):
+    fig.savefig(os.path.join(REPORTS, f"control_saturation.{ext}"), dpi=200, bbox_inches="tight")
 plt.close(fig)
-print(f"  saved plot: {p}")
+print("  saved plot: reports/control_saturation.pdf (+ .png)")
 
 
 # ---------------------------------------------------------------- VERDICT
