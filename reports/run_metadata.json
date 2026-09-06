@@ -1,0 +1,53 @@
+{
+  "runs": [
+    {
+      "run": "colab_run_qwen_5k_L5-8-13",
+      "n_examples": 5000,
+      "depths_swept": 3,
+      "elapsed_sec": 2884.3,
+      "sec_per_record": 0.577,
+      "precision": "bf16",
+      "attn_impl": "eager",
+      "model_id": "Qwen/Qwen2.5-7B-Instruct",
+      "jlens_mode": "autograd",
+      "self_check": false,
+      "torch": "2.11.0+cu128",
+      "transformers": "5.14.1",
+      "gpu_model": null
+    },
+    {
+      "run": "colab_run_qwen_failures_fullsweep",
+      "n_examples": 137,
+      "depths_swept": 29,
+      "elapsed_sec": 482.3,
+      "sec_per_record": 3.52,
+      "precision": "bf16",
+      "attn_impl": "eager",
+      "model_id": "Qwen/Qwen2.5-7B-Instruct",
+      "jlens_mode": "autograd",
+      "self_check": false,
+      "torch": "2.11.0+cu128",
+      "transformers": "5.14.1",
+      "gpu_model": null
+    },
+    {
+      "run": "colab_run_qwen_fullsweep_500",
+      "n_examples": 500,
+      "depths_swept": 29,
+      "elapsed_sec": 1745.4,
+      "sec_per_record": 3.491,
+      "precision": "bf16",
+      "attn_impl": "eager",
+      "model_id": "Qwen/Qwen2.5-7B-Instruct",
+      "jlens_mode": "autograd",
+      "self_check": false,
+      "torch": "2.11.0+cu128",
+      "transformers": "5.14.1",
+      "gpu_model": null
+    }
+  ],
+  "total_elapsed_sec": 5112.0,
+  "total_elapsed_hours": 1.42,
+  "gpu_model_recorded": false,
+  "self_check_enabled_in_any_run": false
+}

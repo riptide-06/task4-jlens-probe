@@ -20,7 +20,7 @@
 \item {\bf Limitations}
     \item[] Question: Does the paper discuss the limitations of the work performed by the authors?
     \item[] Answer: \answerYes{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: Section~5 (Limitations) covers the unresolved J-lens replay validation and the two self-check defects we found, what J-lens measures by construction given it executes decoder layers $\ell..28$, the 72-success ceiling on the matched full-depth comparison, the 137-failure cap, single model and single synthetic dataset, and the total absence of causal evidence.
+    \item[] Justification: Section~6 (Limitations) covers the unresolved J-lens replay validation and the two self-check defects we found, what J-lens measures by construction given it executes decoder layers $\ell..28$, the 72-success ceiling on the matched full-depth comparison, the 137-failure cap, single model and single synthetic dataset, and the total absence of causal evidence.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper has no limitation while the answer \answerNo{} means that the paper has limitations, but those are not discussed in the paper. 
@@ -70,7 +70,7 @@
 \item {\bf Open access to data and code}
     \item[] Question: Does the paper provide open access to the data and code, with sufficient instructions to faithfully reproduce the main experimental results, as described in supplemental material?
     \item[] Answer: \answerYes{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: Analysis scripts, the simulation, per-depth CSVs, per-run configuration files and all generated outputs are in the repository. The repository URL is withheld in this anonymized build and will be given in the camera-ready.
+    \item[] Justification: The repository is private at submission time and will be made public at camera-ready; its URL is withheld from this anonymized build. An anonymized archive accompanies the submission (\texttt{supplementary\_anon.zip}) containing the analysis scripts, the simulation, the committed per-depth CSVs and per-run configuration files, every generated output in \texttt{reports/}, and a README with the rebuild commands. It carries no git history, names or URLs.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that paper does not include experiments requiring code.
@@ -115,7 +115,7 @@
 \item {\bf Experiments compute resources}
     \item[] Question: For each experiment, does the paper provide sufficient information on the computer resources (type of compute workers, memory, time of execution) needed to reproduce the experiments?
     \item[] Answer: \answerYes{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: The three GPU probe runs and their wall-clock times are recorded from the committed per-run configuration files (Section~4). All analysis reported in this paper is CPU-only and completes in minutes on a laptop.
+    \item[] Justification: The committed per-run configuration files record model, precision, attention implementation, depth set and elapsed wall-clock; \texttt{run\_metadata.py} extracts them and Section~4 states the totals ($5{,}112$\,s across the three runs; $3.52$/$3.49$\,s per record at 29 depths, $0.577$\,s at three). The \emph{GPU model was not logged}, so no hardware is claimed. All analysis reported in this paper is CPU-only and completes in minutes on a laptop.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not include experiments.
@@ -127,7 +127,7 @@
 \item {\bf Code of ethics}
     \item[] Question: Does the research conducted in the paper conform, in every respect, with the NeurIPS Code of Ethics \url{https://neurips.cc/public/EthicsGuidelines}?
     \item[] Answer: \answerYes{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: The work reviews and retracts one of our own published internal results. It involves no human subjects, no personal data, and no model release.
+    \item[] Justification: The work reviews and retracts one of our own earlier internal results. It involves no human subjects, no personal data, and no model release.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the authors have not reviewed the NeurIPS Code of Ethics.
@@ -139,7 +139,7 @@
 \item {\bf Broader impacts}
     \item[] Question: Does the paper discuss both potential positive societal impacts and negative societal impacts of the work performed?
     \item[] Answer: \answerYes{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: Discussed in Section~7. The effect of the paper is to raise the evidentiary bar for a common class of interpretability claim, including one of our own; we see no negative societal risk from a methodological correction of this kind.
+    \item[] Justification: Section~7 closes with a \textbf{Broader impact} paragraph: the work raises the evidentiary bar for a class of internal-representation claim, and its foreseeable downside is that genuine effects become harder to publish if the controls are applied without the graded, matched and split-half replacements the paper recommends. No other societal impact is foreseen.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that there is no societal impact of the work performed.

@@ -301,7 +301,7 @@ VERDICT ON THE TWO SURVIVING SIGNALS
        a real but diffuse effect with no reproducible best layer.)
 
 ==============================================================================
-6. SLACK-PASTEABLE SUMMARY
+6. PASTEABLE SUMMARY (plain text, for chat or issue trackers)
 ==============================================================================
 ```
 Task 4 -- controls round 2 (condition-matched). CSV-only, no GPU.
@@ -335,4 +335,4 @@ VERDICT
   All of this is correlational. Causal claims still need patching/ablation.
 ```
 
-saved -> reports/slack_summary.txt
+saved -> reports/summary_table.txt

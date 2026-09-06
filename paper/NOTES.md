@@ -197,6 +197,24 @@ repaired check on ≥20 seeded records and commit
 `reports/self_check_bf16.json`) **was skipped: `nvidia-smi` is absent on this
 machine.** See "Skipped / partial".
 
+## 4c. Compute facts (Fix 3, item 8)
+
+`run_metadata.py` -> `reports/run_metadata.json`, read from the committed
+`outputs/*/config.json`. **Wall-clock IS recorded; GPU model is NOT.**
+
+| run | n | depths | elapsed (s) | s/record |
+|---|---|---|---|---|
+| 5k, three depths | 5000 | 3 | 2884.3 | 0.577 |
+| 137 failures, full sweep | 137 | 29 | 482.3 | 3.520 |
+| 500, full sweep | 500 | 29 | 1745.4 | 3.491 |
+| **total** | | | **5112.0 (1.42 h)** | |
+
+Section 4 states these; the paper claims **no GPU model**, because none is
+logged. The author reports **A100-40GB** and roughly 3.5 s/record at 29 depths,
+0.6 s/record at 3 depths — the timings match the configs, but the **hardware is
+unsourced** and is therefore not in the paper. Checklist item 8 says exactly
+what is recorded.
+
 ## 5. Unverified references
 
 **None.** All 15 entries in `refs.bib` were verified on 2026-09-06 against arXiv

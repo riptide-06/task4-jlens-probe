@@ -286,7 +286,10 @@ The dataset is 5{,}000 synthetic records varying complexity level, entity type
 attention (required to capture attention probabilities), no quantization, chat
 prompt format, with an entity-aware prefill ending exactly where the room name
 must appear; the readout is the single token at that position. All three runs
-used \code{transformers} 5.14.1. Per-run configurations are committed.
+used \code{transformers} 5.14.1. Per-run configurations are committed, and record
+$5{,}112$\,s of GPU wall-clock in total ($1.42$\,h): $3.52$ and $3.49$\,s per
+record for the two 29-depth sweeps and $0.577$\,s per record for the three-depth
+sweep. The GPU model is not recorded by the probe, so we do not state one.
 
 \paragraph{Depth indexing.} The model has 28 decoder layers. A pre-hook on the
 input of each layer plus a post-hook on the output of the last gives
@@ -542,6 +545,15 @@ The effect of these is to raise the evidentiary bar for a common class of
 interpretability claim, including one of our own. We think the trade is
 favourable: of the results we previously reported, the two that survive are
 better localized and better supported than the one we lost.
+
+\paragraph{Broader impact.} This is a methodological correction, and its
+intended effect is to make a common class of internal-representation claim
+harder to assert without controls. The foreseeable downside is the mirror image:
+if the controls are applied only in their strictest form, genuine
+internal-representation effects become harder to publish, which is why we
+recommend the graded, matched and split-half statistics as replacements rather
+than proposing that such claims be abandoned. We foresee no other societal
+impact from this work.
 
 \bibliographystyle{plainnat}
 \bibliography{refs}

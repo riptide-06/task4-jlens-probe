@@ -508,8 +508,8 @@ for c, L in [("jlens_margin", 5), ("attn_correct_minus_stale", 22), ("logitlens_
         print(f"       a real but diffuse effect with no reproducible best layer.)")
 
 
-# ============================================================== 6. SLACK TABLE
-hr("6. SLACK-PASTEABLE SUMMARY")
+# ============================================================== 6. PASTEABLE SUMMARY TABLE
+hr("6. PASTEABLE SUMMARY (plain text, for chat or issue trackers)")
 jl = raw_matched[raw_matched.layer == 5].iloc[0]
 a19 = raw_matched[raw_matched.layer == 19].iloc[0]
 a22 = raw_matched[raw_matched.layer == 22].iloc[0]
@@ -550,7 +550,7 @@ for c in MEASURES:
 lines.append("  logitlens: real but diffuse -- passes the null, no reproducible best layer.")
 lines.append("  All of this is correlational. Causal claims still need patching/ablation.")
 lines.append("```")
-slack = "\n".join(lines)
-print(slack)
-open(os.path.join(REPORTS, "slack_summary.txt"), "w").write(slack)
-print(f"\nsaved -> reports/slack_summary.txt")
+summary_text = "\n".join(lines)
+print(summary_text)
+open(os.path.join(REPORTS, "summary_table.txt"), "w").write(summary_text)
+print(f"\nsaved -> reports/summary_table.txt")

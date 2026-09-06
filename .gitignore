@@ -27,3 +27,7 @@ outputs/**/heads.csv
 
 # Local scratch runs: prefix a run directory with "_" to keep it untracked.
 outputs/_*/
+
+# Supplementary archive is a build product of paper/final; rebuild with the
+# recipe in paper/final/README.md rather than committing a 7 MB binary.
+paper/final/supplementary_anon.zip
