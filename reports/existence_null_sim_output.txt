@@ -1,0 +1,34 @@
+========================================================================
+EXISTENCE-NULL SIMULATION  (seed 20260906, 2000 examples, 5000 permutations)
+========================================================================
+
+(a) P(E=1) for two EXCHANGEABLE series (offset = 0, noise = 1.0):
+      L =  4 depths : P(E=1) = 0.8100
+      L =  8 depths : P(E=1) = 0.8930
+      L = 12 depths : P(E=1) = 0.9235
+      L = 16 depths : P(E=1) = 0.9390
+      L = 24 depths : P(E=1) = 0.9605
+      L = 29 depths : P(E=1) = 0.9740
+      L = 48 depths : P(E=1) = 0.9770
+
+    At L = 29, the number of residual-stream positions in the case study,
+    two exchangeable series already satisfy the existence test essentially always.
+
+(b) Null A at L = 29, with c given a genuine disadvantage (offset -0.75):
+      E : observed 0.9980 | null mean 0.9990 | null sd 4.997e-04
+          -> near-degenerate here; in the case-study data E = 1 in BOTH
+             directions for all 137 examples, so the null is an EXACT
+             point mass and no test is possible at all.
+      G : observed 11.86  | null mean 14.50 | null sd 0.138      -> testable
+
+(c) Sensitivity to a genuine effect (offset sweep):
+      offset -1.0 : E = 0.8880   G/L = 0.318
+      offset -0.5 : E = 0.9385   G/L = 0.405
+      offset +0.0 : E = 0.9675   G/L = 0.515
+      offset +0.5 : E = 0.9875   G/L = 0.609
+      offset +1.0 : E = 0.9950   G/L = 0.685
+
+    E is pinned near 1 across the whole range, including where c is
+    genuinely WORSE than s. G tracks the offset monotonically.
+
+saved: reports/existence_null_sim.pdf (+ .png)
