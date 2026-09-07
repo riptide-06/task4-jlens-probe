@@ -225,11 +225,23 @@ The J-lens result is no longer "provisional pending replay validation". It is
 **exploratory**, for a reason that does not depend on the replay at all and that
 no GPU run would change.
 
-`jlens_L = f_L(0) + J.h_L` is a first-order Taylor expansion, about `b = 0`, of
-the model's own remaining computation. Such a lens is pinned at one end: as
-`L -> 28` there is less and less computation left to expand, and at depth 28
-`f_28` is just norm + unembed, so a faithful first-order readout must approach
-the model's output distribution.
+**What the probe computes** is `jlens_L = f_L(0) + J_L(h_L)·h_L`: the remaining
+network's output at zero input, plus the directional derivative of `f_L` at the
+residual `h_L` along `h_L`. Verified from the code — `jacobian_lens` passes `h`
+as the **primal** to `jvp_autograd` (which does
+`h.requires_grad_(True); stack.forward_from(layer_idx, h, ...)`) and `v = h - b`
+only as the **tangent**, with the anchor `f_L(b)` computed separately. So the
+Jacobian is evaluated at the residual, *not* at the point the anchor is taken
+from, and **this is not a first-order expansion about 0**.
+
+That distinction is load-bearing. A true expansion about 0 would be
+`f_L(0) + J_L(0)·h_L`; at the final depth `J_28(0)·h = W_U(γ⊙h)/√ε`, which is
+large and, since ranks are scale-invariant, reproduces the model's own ordering
+exactly. The quantity actually computed does the opposite: it vanishes.
+
+Whatever it is, it is meant to stand in for `f_L(h_L)`, and it is pinned at one
+end — as `L → 28` there is less and less remaining computation, and a quantity
+tracking the remaining network would converge to the model's output.
 
 **It does not.** `controls_check2.py` section 4c (new) tests this with no GPU. In
 a stale-output failure the token the model emits is by construction its own
@@ -248,7 +260,7 @@ J-lens row, with a Verdict column reading "exploratory".
 
 **The dtype ladder is no longer open work for this result.** The self-check and
 `jlens_diag.py` both validate the *replay* — that `f_L` is computed correctly.
-The convergence failure is a property of the *expansion*, and would survive an
+The convergence failure is a property of the *surrogate*, and would survive an
 exactly faithful `f_L` in double precision. Appendix D says so explicitly. The
 first thing to try instead is a baseline nearer the data (`prev_layer`, which the
 probe already supports).
@@ -266,9 +278,10 @@ fixed in `31d6d07`.
 
 **Two claims in the review note were checked and one did not hold.**
 
-*The depth-28 claim.* The note proposed saying the expansion at depth 28 is
+*The depth-28 claim.* The note proposed saying the quantity at depth 28 is
 "exact up to a positive scale factor", so the 71.5% argmax agreement there
-"bounds the numerical precision of the bf16 JVP path". Verified the architecture
+"bounds the numerical precision of the bf16 JVP path". That is true of a genuine
+first-order expansion about 0 — but the probe does not compute one (see above). Verified the architecture
 first, from the installed `transformers` 5.14.1 source (the version all three
 runs used): `Qwen2RMSNorm` has only a `weight` parameter and no bias, and
 `lm_head` is `nn.Linear(hidden, vocab, bias=False)`. Both bias-free, as the note
@@ -277,9 +290,10 @@ assumed — but the consequence runs the other way:
 - `f_28(0) = 0`, because there is no bias anywhere.
 - RMSNorm divides out the scale, so `f_28` is positively homogeneous of **degree
   zero**. By Euler's theorem the directional derivative along `h` of a
-  degree-zero homogeneous function is zero, so `J(h)·h = 0`.
-- Hence `jlens_28 = f_28(0) + J·h = 0` **identically**. The expansion annihilates
-  the signal; it is not exact up to scale.
+  degree-zero homogeneous function is zero, so `J_28(h)·h = 0` — and `J(h)`, the
+  Jacobian at the residual, is exactly what the probe contracts with `h`.
+- Hence `jlens_28 = f_28(0) + J_28(h)·h = 0` **identically**, for any bias-free
+  scale-invariant readout. The computed quantity annihilates the signal.
 
 The data match that prediction exactly (`reports/jlens_depth28_degeneracy.csv`):
 mean |logit| 2.2e-06 at depth 28 against O(1) at 26–27; mean `p_correct`
@@ -442,10 +456,14 @@ Objection 1 is the strongest remaining and is now first in the list.
    should change.
 3. ~~Run `jlens_diag.py` to resolve the J-lens label~~ **DROPPED as open work.**
    The ladder tests the replay, not the expansion; the convergence failure that
-   demotes J-lens is a property of the expansion and would survive a perfect
+   demotes J-lens is a property of the surrogate and would survive a perfect
    replay. If J-lens is to be rehabilitated the experiment is a per-depth
-   linearization-error measurement (KL between `f_L(h_L)` and `jlens_L`), and/or
-   re-running with `--jlens-baseline prev_layer`.
+   approximation-error measurement (KL between `f_L(h_L)` and `jlens_L`).
+   Note `--jlens-baseline prev_layer` is **not** a fix on its own: it changes the
+   anchor and tangent but not the primal, giving
+   `f_L(h_{L-1}) + J_L(h_L)·(h_L − h_{L-1})`, still not a Taylor expansion. No run
+   used it. Making the object an expansion requires evaluating the Jacobian at the
+   baseline — a one-line change to the primal passed to `jvp_autograd`.
 4. **Re-run attention at depths 19–26 for the 682 matched successes** in the 5k
    run so depth 22 rests on 682 controls rather than 72. Forward pass only, no
    JVP — the cheapest of the three GPU jobs and the highest value.

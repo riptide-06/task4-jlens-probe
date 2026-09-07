@@ -441,12 +441,18 @@ print("""
 # ============================================ 4c. DOES J-LENS CONVERGE TO THE MODEL?
 hr("4c. J-LENS CONVERGENCE CHECK (a validity test the decomposition cannot do)")
 print("""
-jlens_L = f_L(0) + J.h_L is a first-order Taylor expansion of the model's own
-remaining computation about the baseline b = 0. Whatever else such a lens does,
-it is pinned at one end: as L -> 28 there is less and less remaining computation
-to expand, and at the final depth f_28 is just norm + unembed. A faithful
-first-order readout must therefore converge to the model's actual output
-distribution as L -> 28.
+What the probe computes is jlens_L = f_L(0) + J_L(h_L).h_L: the remaining
+network's output at zero input, plus the DIRECTIONAL DERIVATIVE of f_L at the
+residual h_L along h_L. The Jacobian is evaluated at h_L, not at the point the
+anchor is taken from (jacobian_lens passes h as the primal to jvp_autograd and
+h - b only as the tangent), so this is NOT a first-order expansion about 0.
+
+Whatever it is, it is meant to stand in for f_L(h_L), and it is pinned at one
+end: as L -> 28 there is less and less remaining computation, and at the final
+depth f_28 is just norm + unembed. A quantity that tracked the remaining network
+would converge to the model's actual output distribution as L -> 28.
+
+
 
 This is testable with no GPU. In a stale-output failure the model EMITS the stale
 room, so the model's rank-1 token at the output IS the stale token. The logit
@@ -481,11 +487,14 @@ pd.DataFrame(conv).to_csv(os.path.join(REPORTS, "jlens_convergence.csv"), index=
 # At depth 28, f_28(h) = lm_head(RMSNorm(h)). Both are BIAS-FREE in Qwen2
 # (transformers Qwen2RMSNorm has only a `weight`; lm_head is
 # nn.Linear(..., bias=False)). Two consequences:
-#   (i)  f_28(0) = 0, so the expansion's anchor term vanishes; and
+#   (i)  f_28(0) = 0, so the anchor term vanishes; and
 #   (ii) RMSNorm divides out the scale, so f_28 is positively homogeneous of
-#        degree 0 in h. Euler's theorem then gives J(h).h = 0.
-# So jlens_28 = f_28(0) + J.h = 0 identically -- the expansion ANNIHILATES the
-# signal rather than reproducing it. Test that signature directly.
+#        degree 0 in h. Euler's theorem then gives J_28(h).h = 0 -- and this is
+#        the Jacobian AT h, which is exactly what the probe contracts with h.
+# So jlens_28 = f_28(0) + J_28(h).h = 0 identically, for ANY bias-free
+# scale-invariant readout. Note a true expansion about 0 would instead give
+# J_28(0).h = W_U(gamma . h)/sqrt(eps), which is large and reproduces the
+# model's own ranking. Test the signature directly.
 print("\n  Is depth 28 the same failure as depths 26-27, or a different one?")
 print(f"    {'depth':>5} {'mean |score|':>13} {'mean p_correct':>15} {'both ranks==1':>14} {'margin==0':>10}")
 _unif = 1.0 / VOCAB

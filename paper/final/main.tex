@@ -188,8 +188,8 @@ would predict if the remaining layers were the identity. The tuned lens
 resulting bias. \citet{yomdin2024jump} learn linear ``shortcut'' transformations
 that map a hidden state to a later-layer representation, bypassing the
 intervening computation; this is the closest published relative of the J-lens
-used in our case study, which linearizes the model's own remaining computation
-rather than fitting a probe. \citet{geva2022ffn} analyze feed-forward updates
+used in our case study, which takes a directional derivative of the model's own
+remaining computation rather than fitting a probe. \citet{geva2022ffn} analyze feed-forward updates
 directly in vocabulary space. All of these make intermediate states readable,
 and all of them invite the existence-style inference we examine.
 
@@ -361,9 +361,12 @@ Run & Records & Depths & Outcomes \\
 \end{table}
 
 \paragraph{Measures.} \emph{Logit lens}: $\mathrm{unembed}(\mathrm{norm}(h_\ell))$.
-\emph{J-lens}: a first-order expansion of the model's own remaining computation,
-$f_\ell(0) + J h_\ell$, where $f_\ell$ runs decoder layers $\ell..28$ with the
-real frozen KV cache. Nine attention columns record mass at the readout position.
+\emph{J-lens}: the network's output at zero input plus the directional derivative
+of $f_\ell$ at $h_\ell$ along $h_\ell$, that is $f_\ell(0) + J_\ell(h_\ell)\,h_\ell$,
+where $f_\ell$ runs decoder layers $\ell..28$ with the real frozen KV cache. The
+Jacobian is evaluated at the residual, not at the point the anchor is taken from,
+so this is not a Taylor expansion about $0$ --- a distinction that matters
+(Section~\ref{sec:limits}). Nine attention columns record mass at the readout position.
 For each measure we use the margin between $c$ and $s$.
 
 % =============================================================================
@@ -550,27 +553,30 @@ in failures.}
 \label{sec:limits}
 % =============================================================================
 
-\paragraph{Why the J-lens result is exploratory.} J-lens is a first-order Taylor
-expansion, about the baseline $b=0$, of the model's own remaining computation:
-$\mathrm{jlens}_\ell = f_\ell(0) + J h_\ell$, with $f_\ell$ running decoder layers
-$\ell \ldots 28$. A lens of that definition is pinned at one end. As
-$\ell \to 28$ there is less and less computation left to expand --- at the final
-depth $f_{28}$ is just the norm and the unembedding --- so a faithful first-order
-readout must approach the model's own output distribution. It does not.
+\paragraph{Why the J-lens result is exploratory.} What the probe computes is
+$\mathrm{jlens}_\ell = f_\ell(0) + J_\ell(h_\ell)\,h_\ell$: the remaining network's
+output at zero input, plus the directional derivative of $f_\ell$ at the residual
+$h_\ell$ along $h_\ell$. The Jacobian is evaluated at $h_\ell$, so this is not a
+first-order expansion about any point, and it does not inherit the guarantee such
+an expansion would carry. As $\ell \to 28$ there is less and less computation
+left --- at the final depth $f_{28}$ is just the norm and the unembedding --- and a
+quantity that tracked the remaining network would approach the model's own output
+distribution there. It does not.
 Figure~\ref{fig:depthjlens} shows the divergence, and it is stark in the one
 place the answer is known: in a stale-output failure the token the model emits is
 by construction its own rank-1 token, and the logit lens, being the model's norm
 and unembedding, ranks it $1$ in $100\%$ of failures at depth 28. J-lens places
 that same token at median rank $74{,}329$ at depth 26 and $61{,}842$ at depth 27,
 deep in the tail of a $152{,}064$-token vocabulary. At depth 28 itself the
-expansion does not merely err, it vanishes: with a bias-free RMSNorm and a
-bias-free unembedding, $f_{28}(0)=0$ and $f_{28}$ is positively homogeneous of
-degree zero, so $J(h)h = 0$ by Euler's theorem and $\mathrm{jlens}_{28} \equiv 0$.
+quantity does not merely err, it vanishes: with a bias-free RMSNorm and a
+bias-free unembedding, $f_{28}(0)=0$, and $f_{28}$ is positively homogeneous of
+degree zero, so Euler's theorem gives $J_{28}(h)\,h = 0$ and
+$\mathrm{jlens}_{28} \equiv 0$. This holds for \emph{any} bias-free
+scale-invariant readout, whatever its weights.
 The resulting logits are uniform to three significant figures, and the apparent
-agreement there is a tie artifact (Appendix~\ref{app:jlens}). An expansion that
-does not approach the function it expands, at the end of the stack where there is
-almost nothing left to expand, is not behaving as a readout of the remaining
-network. We therefore read the depth-5
+agreement there is a tie artifact (Appendix~\ref{app:jlens}). A quantity that
+collapses to zero exactly where the remaining computation is simplest is not
+behaving as a readout of that computation. We therefore read the depth-5
 J-lens margin as a fixed, untrained linear functional $J(0)\,h_5$ of the residual
 state that separates the matched groups (AUC $0.888$, held-out $0.882$) --- a
 real and reproducible separation, but not evidence about what the remaining
@@ -657,8 +663,8 @@ twelve failures inside the 500-record run, an avoidable loss of power.
 \centering
 \includegraphics[width=\textwidth]{../../reports/depth_profile_matched_jlens.pdf}
 \caption{As Figure~\ref{fig:depth}, under J-lens. Note the behaviour at depths
-26--27, where almost no computation remains to expand: a faithful first-order
-readout would be converging on the model's output there, and this one is not.
+26--27, where almost no computation remains: a quantity tracking the remaining
+network would be converging on the model's output there, and this one is not.
 See Section~\ref{sec:limits} and Appendix~\ref{app:jlens}.}
 \label{fig:depthjlens}
 \end{figure}
@@ -694,22 +700,46 @@ Section~\ref{sec:limits} demotes the J-lens result because the lens fails a
 convergence check that follows from its own definition. This appendix states
 what would actually diagnose it.
 
-\paragraph{Depth 28 and depths 26--27 are separable failures.} At the final
-depth the remaining computation is $f_{28}(h) = \mathrm{lm\_head}(\mathrm{RMSNorm}(h))$,
-and in this architecture both parts are bias-free: \code{Qwen2RMSNorm} carries a
-\code{weight} and no bias, and \code{lm\_head} is constructed as
-\code{nn.Linear(hidden, vocab, bias=False)} (verified in the \code{transformers}
-5.14.1 source, the version all three runs used). Two consequences follow, and
-they are not what one might hope.
+\paragraph{What the probe actually computes.} It is worth being exact, because
+the distinction drives everything below. In \code{jacobian\_lens} the tangent is
+$v = h_\ell - b$ and the anchor is $f_\ell(b)$, but the Jacobian-vector product is
+taken with the \emph{residual itself} as the primal: \code{jvp\_autograd} sets
+\code{h.requires\_grad\_(True)} and differentiates
+\code{stack.forward\_from(layer\_idx, h, ...)}. With the shipped default
+$b=0$ --- the setting all three runs used --- the computed quantity is therefore
+\[
+  \mathrm{jlens}_\ell \;=\; f_\ell(0) \;+\; J_\ell(h_\ell)\,h_\ell ,
+\]
+the network's output at zero input plus the directional derivative of $f_\ell$ at
+$h_\ell$ along $h_\ell$. \textbf{This is not a first-order expansion about $0$},
+which would be $f_\ell(0) + J_\ell(0)\,h_\ell$ with the Jacobian at the expansion
+point. The two differ sharply, and at the final depth they differ in the most
+consequential way possible.
 
-First, $f_{28}(0) = 0$: with no bias anywhere, the expansion's anchor term
-vanishes. Second, RMSNorm divides out the scale of its input, so $f_{28}$ is
-positively homogeneous of degree zero, $f_{28}(\alpha h) = f_{28}(h)$ for
-$\alpha > 0$; by Euler's theorem the directional derivative along $h$ of a
-degree-zero homogeneous function is zero, so $J(h)\,h = 0$. Therefore
-$\mathrm{jlens}_{28} = f_{28}(0) + J h_{28} = 0$ \emph{identically}. At the one
-depth where the expansion ought to be trivially exact, it instead annihilates
-the signal.
+\paragraph{Depth 28 and depths 26--27 are separable failures.} At the final depth
+the remaining computation is
+$f_{28}(h) = \mathrm{lm\_head}(\mathrm{RMSNorm}(h))$, and in this architecture
+both parts are bias-free: \code{Qwen2RMSNorm} carries a \code{weight} and no
+bias, and \code{lm\_head} is constructed as
+\code{nn.Linear(hidden, vocab, bias=False)} (verified in the \code{transformers}
+5.14.1 source, the version all three runs used). So $f_{28}(0) = 0$, and RMSNorm
+divides out the scale of its input, making $f_{28}$ positively homogeneous of
+degree zero: $f_{28}(\alpha h) = f_{28}(h)$ for $\alpha > 0$. Euler's theorem
+then gives $J_{28}(h)\,h = 0$, and therefore
+\[
+  \mathrm{jlens}_{28} \;=\; f_{28}(0) + J_{28}(h)\,h \;=\; 0
+  \quad\text{identically.}
+\]
+This is a property of the \emph{form} of the quantity, not of these weights: it
+holds for any bias-free scale-invariant readout.
+
+The contrast with a genuine expansion is instructive. Linearizing about $0$ would
+give $J_{28}(0)\,h = W_U(\gamma \odot h)/\sqrt{\varepsilon}$, since at the origin
+the RMSNorm denominator is $\sqrt{\varepsilon}$. That is large, and because ranks
+are invariant to positive scaling it reproduces the model's own ordering at the
+final depth exactly. So the two objects behave in opposite ways at depth 28: the
+expansion would be exact up to a positive factor, and the quantity actually
+computed vanishes.
 
 The data carry that signature exactly. At depth 28 the J-lens logits have mean
 absolute value $2.2\times10^{-6}$ --- six orders of magnitude below their size at
@@ -722,28 +752,32 @@ $71.5\%$ ``rank 1'' at depth 28 is thus a tie artifact and bounds nothing; in
 particular it is not a measurement of the bf16 JVP path's numerical precision.
 
 Depths 26--27 are a different failure. There the logits are $O(1)$ and no margin
-is exactly zero, so the expansion produces a genuine distribution --- it is
-simply the wrong one, placing the model's own argmax token at median rank
-$74{,}329$ and $61{,}842$. That is linearization error, not annihilation. The two
-should not be conflated: a fix for one need not touch the other.
+is exactly zero, so the quantity produces a genuine distribution --- it is simply
+the wrong one, placing the model's own argmax token at median rank $74{,}329$ and
+$61{,}842$. That is approximation error, not annihilation. The two should not be
+conflated: a fix for one need not touch the other.
 
-\paragraph{The right diagnostic is the linearization error, not the replay.}
-$\mathrm{jlens}_\ell = f_\ell(0) + J h_\ell$ approximates $f_\ell(h_\ell)$ by a
-first-order expansion about $b = 0$. The quantity that governs whether it is a
-readout of the remaining network is therefore the per-depth discrepancy between
-$f_\ell(h_\ell)$ --- the true output of running layers $\ell \ldots 28$ on the
-real activation --- and $\mathrm{jlens}_\ell$. Measuring it for every $\ell$, as a
-KL between the two softmaxes rather than a max logit difference, would say
-directly how far the expansion is from the function, and where. We have not run
-that measurement; it needs a GPU.
+\paragraph{The right diagnostic is the approximation error, not the replay.}
+Whatever $\mathrm{jlens}_\ell$ is meant to stand in for, it is meant to stand in
+for $f_\ell(h_\ell)$. The quantity that governs whether it does is therefore the
+per-depth discrepancy between $f_\ell(h_\ell)$ --- the true output of running
+layers $\ell \ldots 28$ on the real activation --- and $\mathrm{jlens}_\ell$,
+measured as a KL between the two softmaxes rather than a max logit difference.
+That says directly how far the surrogate is from the function, and where. We have
+not run it; it needs a GPU. Figure~\ref{fig:depthjlens} answers the question
+qualitatively and, for the purposes of this paper, sufficiently.
 
-Figure~\ref{fig:depthjlens} answers the question qualitatively and, for the
-purposes of this paper, sufficiently. Because $b = 0$ is far from the real
-activation, the expansion is being evaluated well outside any radius in which a
-first-order term dominates, and the residual $f_\ell(h_\ell) - \mathrm{jlens}_\ell$
-is large enough at $\ell = 26, 27$ to move the model's own argmax token into the
-tail of the vocabulary. A baseline nearer the data --- the previous depth's
-activation, which the probe already supports --- would be the first thing to try.
+\paragraph{The other baseline is not a fix either.} The probe accepts
+\code{--jlens-baseline prev\_layer}, which sets $b = h_{\ell-1}$. That changes the
+anchor and the tangent but \emph{not} the primal: the computed quantity becomes
+$f_\ell(h_{\ell-1}) + J_\ell(h_\ell)\,(h_\ell - h_{\ell-1})$, with the Jacobian
+still taken at $h_\ell$ rather than at the baseline. It is therefore not the
+well-defined first-order expansion about $h_{\ell-1}$ either, which would be
+$f_\ell(h_{\ell-1}) + J_\ell(h_{\ell-1})\,(h_\ell - h_{\ell-1})$. \textbf{No run
+in this paper used it}, and adopting it would not by itself make the object a
+Taylor expansion; that requires evaluating the Jacobian at the point the anchor
+is taken from. Either correction is a one-line change to the primal passed to
+\code{jvp\_autograd}, and both are cheap to test on the existing prompts.
 
 \paragraph{What the dtype ladder would and would not settle.} The probe ships a
 replay self-check, and a diagnostic (\code{jlens\_diag.py}) that runs it across
@@ -751,7 +785,7 @@ dtypes. Neither bears on the above. The self-check validates that the
 \emph{truncated stack} reproduces the model, that is, that $f_\ell$ is computed
 correctly; the dtype ladder asks whether any discrepancy there is numerical
 precision. Both concern the replay. The convergence failure documented here is a
-property of the \emph{expansion}, and would survive an exactly faithful $f_\ell$
+property of the \emph{surrogate}, and would survive an exactly faithful $f_\ell$
 computed in double precision. We therefore do not treat running the ladder as
 open work for this result. For completeness: the self-check was not enabled for
 any of the three runs (all three configurations record
