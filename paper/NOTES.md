@@ -81,6 +81,14 @@ output file; none was typed from memory.
 | deviation AUC .871; cross-depth corr .268 vs .538 | §6 | "4b. J-LENS DECOMPOSITION" |
 | 5,733 attn NaNs, all depth 28 | §5.4, §6 | "MISSING-DATA POLICY" |
 
+### From `reports/jlens_convergence.csv` (controls_check2.py §4c)
+| Number | Where | Locate |
+|---|---|---|
+| J-lens median rank of the emitted token: 74,329 at depth 26 | §6 | `jlens_median`, depth 26 |
+| ... 61,842 at depth 27 | §6 | `jlens_median`, depth 27 |
+| J-lens recovers rank 1 at depth 28 in 71.5% of failures | §6 | `jlens_frac_rank1`, depth 28 |
+| logit lens ranks it 1 in 100% at depth 28 | §6 | `logit_frac_rank1`, depth 28 |
+
 ### From `reports/depth_profile_matched_*.csv` + stdout (depth_profile_matched.py)
 | Number | Where | Locate |
 |---|---|---|
@@ -203,27 +211,48 @@ depend on J-lens.
 
 ---
 
-## 4b. Uncommitted observations reported by the author
+## 4b. J-lens demoted (why, and what replaced the provisional label)
 
-Recorded here for completeness. **These are unsourced: no committed script,
-output file, notebook cell or git object in this repository contains them, and
-none could be reproduced without a CUDA device. They are excluded from the
-paper**, which states only that a separate diagnostic invocation exceeded the
-check's threshold and cites no number.
+The J-lens result is no longer "provisional pending replay validation". It is
+**exploratory**, for a reason that does not depend on the replay at all and that
+no GPU run would change.
 
-- bf16 arm: the self-check reported `max|Δlogit|` **above** the 0.5 threshold,
-  with correlation ≈0.999 and argmax agreement. (Argmax agreement plus high
-  correlation alongside a large max-difference is the signature of a deep-tail
-  token dominating the maximum, which is exactly why the repaired check now also
-  reports KL.)
-- fp16 arm: produced **non-finite logits**, and `out=other` on all records. This
-  is the case the old code reported as "OK", because `nan > 0.5` is False. Fixed
-  in commit `31d6d07`; a non-finite comparison is now an explicit FAIL.
+`jlens_L = f_L(0) + J.h_L` is a first-order Taylor expansion, about `b = 0`, of
+the model's own remaining computation. Such a lens is pinned at one end: as
+`L -> 28` there is less and less computation left to expand, and at depth 28
+`f_28` is just norm + unembed, so a faithful first-order readout must approach
+the model's output distribution.
 
-Neither observation is usable as evidence in its current state. Fix 2.4 (run the
-repaired check on ≥20 seeded records and commit
-`reports/self_check_bf16.json`) **was skipped: `nvidia-smi` is absent on this
-machine.** See "Skipped / partial".
+**It does not.** `controls_check2.py` section 4c (new) tests this with no GPU. In
+a stale-output failure the token the model emits is by construction its own
+rank-1 token, so the logit lens — being the model's own norm and unembed — must
+rank it 1 at depth 28, and does, in 100% of failures. J-lens puts that same token
+at median rank **74,329 at depth 26** and **61,842 at depth 27**, and recovers
+rank 1 at depth 28 in only **71.5%** of failures. Source:
+`reports/jlens_convergence.csv`.
+
+Consequence for the paper: the depth-5 J-lens margin is read as a fixed,
+untrained linear functional `J(0)·h_5` that separates the matched groups
+(AUC 0.888, held-out 0.882) — a real and reproducible separation, but not
+evidence about what the remaining network would do with `h_5`. The abstract now
+reports **one** surviving signal (attention at depth 22). Table 3 keeps the
+J-lens row, with a Verdict column reading "exploratory".
+
+**The dtype ladder is no longer open work for this result.** The self-check and
+`jlens_diag.py` both validate the *replay* — that `f_L` is computed correctly.
+The convergence failure is a property of the *expansion*, and would survive an
+exactly faithful `f_L` in double precision. Appendix D says so explicitly. The
+first thing to try instead is a baseline nearer the data (`prev_layer`, which the
+probe already supports).
+
+### Uncommitted observations reported by the author
+
+Retained for completeness, still **unsourced and excluded from the paper**: the
+bf16 self-check reportedly exceeded its 0.5 threshold with correlation ~0.999 and
+argmax agreement; the fp16 arm produced non-finite logits and `out=other` on all
+records. Neither appears in any committed script, output, notebook or git object.
+The fp16 case is the one the old code reported as "OK" (`nan > 0.5` is False);
+fixed in `31d6d07`.
 
 ## 4c. Compute facts (Fix 3, item 8)
 
@@ -339,7 +368,7 @@ Each objection with the sentence that answers it. Verified present in the curren
 |---|---|---|
 | **1** | **"The depth-22 result rests on only 72 matched controls."** | §6 Statistical power: "The matched full-depth comparison rests on 72 successes." Mitigated but not removed — the 682-control re-sweep is the top open TODO, and §5.4's per-head corroboration is independent of the 72. |
 | 2 | "This is all correlational." | Abstract ("Every surviving result is correlational"); §6: "A measure that predicts an outcome need not participate in producing it." |
-| 3 | "Is J-lens even valid?" | §6: not enabled for any of the three runs; a separate diagnostic invocation exceeded the threshold; every J-lens result daggered "provisional pending replay validation". |
+| 3 | "Is J-lens even valid?" | §6 answers it directly and negatively: the lens fails a convergence check its own definition requires (median rank 74,329 / 61,842 at depths 26–27 for the model's own argmax token). The result is demoted to exploratory and the surviving attention result does not depend on it. |
 | 4 | "Single model, single synthetic dataset." | §6 Scope. |
 | 5 | "Who cares about one internal result of yours?" | §1 opens on the general pattern; §3 is model-free; the case study is confined to §4–5 and Appendices A–C. |
 | 6 | "Isn't depth 22 itself selected post hoc?" | §3 Null B (max-$T$) and split-half; Table 3 reports both, and logit-lens margin fails the second. |
@@ -355,7 +384,12 @@ Objection 1 is the strongest remaining and is now first in the list.
    result; if it runs and the identified arm beats all three controls with a low
    donor-copy rate, the paper gains a causal section and the abstract/title
    should change.
-3. **Run `jlens_diag.py`.** Needs CUDA. Resolves the provisional J-lens label.
+3. ~~Run `jlens_diag.py` to resolve the J-lens label~~ **DROPPED as open work.**
+   The ladder tests the replay, not the expansion; the convergence failure that
+   demotes J-lens is a property of the expansion and would survive a perfect
+   replay. If J-lens is to be rehabilitated the experiment is a per-depth
+   linearization-error measurement (KL between `f_L(h_L)` and `jlens_L`), and/or
+   re-running with `--jlens-baseline prev_layer`.
 4. **Re-run attention at depths 19–26 for the 682 matched successes** in the 5k
    run so depth 22 rests on 682 controls rather than 72. Forward pass only, no
    JVP — the cheapest of the three GPU jobs and the highest value.

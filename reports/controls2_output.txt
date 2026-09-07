@@ -281,6 +281,52 @@ survives is depth-specific and cannot come from a shared component.
   i..28, so the supported claim is "decodable THROUGH the remaining network".
 
 
+==============================================================================
+4c. J-LENS CONVERGENCE CHECK (a validity test the decomposition cannot do)
+==============================================================================
+
+jlens_L = f_L(0) + J.h_L is a first-order Taylor expansion of the model's own
+remaining computation about the baseline b = 0. Whatever else such a lens does,
+it is pinned at one end: as L -> 28 there is less and less remaining computation
+to expand, and at the final depth f_28 is just norm + unembed. A faithful
+first-order readout must therefore converge to the model's actual output
+distribution as L -> 28.
+
+This is testable with no GPU. In a stale-output failure the model EMITS the stale
+room, so the model's rank-1 token at the output IS the stale token. The logit
+lens at depth 28 is definitionally the model's own norm+unembed, so it must rank
+that token 1. We ask whether J-lens does the same, and how it behaves just below.
+
+  Rank assigned to the token the model actually emitted (n=137 failures)
+
+  depth |            logit lens |                J-lens |   frac at rank 1
+        |     median       mean |     median       mean |   logit    jlens
+  --------------------------------------------------------------------------
+     20 |     49,255     54,401 |     40,455     50,835 |    0.0%     0.0%
+     21 |     59,668     58,236 |        871      9,197 |    0.0%     5.8%
+     22 |     54,725     54,335 |     53,732     60,478 |    0.0%     0.0%
+     23 |     14,433     18,506 |      6,908     15,722 |    0.0%     0.0%
+     24 |      1,665      5,148 |    103,926     89,568 |    0.0%     0.0%
+     25 |        226      2,775 |     25,597     36,739 |    0.0%     0.0%
+     26 |         10      2,364 |     74,329     68,220 |    5.1%     0.0%
+     27 |          1          2 |     61,842     67,653 |   50.4%     0.0%
+     28 |          1          1 |          1     38,849 |  100.0%    71.5%
+
+  Reading: the logit lens converges as it must -- median rank 1 by depth 27 and
+  rank 1 in 100% of failures at depth 28. J-LENS DOES NOT. At depths 26 and 27,
+  where almost no computation remains to expand, it places the model's own
+  argmax token at median rank 74,329 and 61,842
+  -- deep in the tail of a 152,064-token vocabulary. Even at depth 28 it recovers
+  rank 1 in only 71.5% of failures against the logit lens's 100%.
+
+  A first-order expansion that does not approach the function it expands, at the
+  end of the stack where the expansion is nearly exact, is not behaving as a
+  readout of the remaining network. The depth-5 J-lens margin should therefore be
+  read as a fixed untrained linear functional of h_5 that happens to separate the
+  matched groups -- not as evidence about what the remaining network would do
+  with h_5. Saved -> reports/jlens_convergence.csv
+
+
   saved (pdf + png): auc_raw_vs_matched, perm_null_B, split_half, attn_sweep_matched
 
 ==============================================================================

@@ -58,7 +58,6 @@
 \newcommand{\code}[1]{\texttt{\small #1}}
 \newcommand{\no}[1]{\textcolor{bad}{\textbf{#1}}}
 \newcommand{\yes}[1]{\textcolor{good}{\textbf{#1}}}
-\newcommand{\prov}{\textsuperscript{$\dagger$}}
 
 \title{``Present in Some Layer'' Is Not Evidence:\\
 Controls for Layer-Existence Claims in Mechanistic Interpretability}
@@ -102,10 +101,11 @@ wins fewer depths than label-swap chance. We further show that two figures we
 had reported for the same quantity, a mean best rank of $47{,}343$ and of $2.3$,
 are the same lens on the same 137 examples and differ only in which depths were
 swept. Separately, the failure and success populations are completely confounded
-on task condition. After matching and correcting for depth selection, two
-signals survive: an attention-mass differential at depth 22 (matched
-AUC $0.973$, held-out $0.970$) and, provisionally, a J-lens margin at depth 5
-(matched $0.888$, held-out $0.882$). Logit-lens margin does not survive. Every
+on task condition. After matching and correcting for depth selection, one
+signal survives: an attention-mass differential at depth 22 (matched AUC
+$0.973$, held-out $0.970$). Logit-lens margin does not survive, and we demote a
+J-lens result that passes the same tests, because the lens fails a convergence
+check its own definition requires. Every
 surviving result is correlational; none establishes that the measured quantity
 participates in producing the output.
 \end{abstract}
@@ -229,7 +229,9 @@ run it.
 state $s$. Let $\ell \in \{0,\dots,L-1\}$ index positions at which the residual
 stream is read, and let $r_\ell(\cdot)$ be the rank of a token in the decoded
 vocabulary distribution at position $\ell$, with rank 1 the argmax and smaller
-meaning better. Define
+meaning better. We write \emph{layer} only when quoting the claim as it is
+commonly stated, and \emph{depth} for the positions actually measured, since a
+model with $L-1$ decoder layers is read at $L$ residual-stream positions. Define
 \[
 E \;=\; \mathbb{1}\big[\exists \ell : r_\ell(c) < r_\ell(s)\big],
 \qquad
@@ -310,9 +312,7 @@ asks which room it is in now. The relocation makes the earlier stated room
 the earlier one, and a failure is the model emitting the stale room. Records vary
 in complexity level, in whether the tracked entity is an agent or an object, and
 in the number of distractor mentions ($0$, $3$ or $4$) and their position
-relative to the update.
-The dataset is 5{,}000 synthetic records varying complexity level, entity type
-(agent or object), and the number and position of distractor mentions.
+relative to the update. The dataset is 5{,}000 such records.
 
 \paragraph{Model and configuration.} Qwen2.5-7B-Instruct in bfloat16, eager
 attention (required to capture attention probabilities), no quantization, chat
@@ -476,13 +476,15 @@ also where the surviving attention signal sits.
 
 \begin{table}[t]
 \centering\small
-\begin{tabular}{lrrrrrl}
+\setlength{\tabcolsep}{4pt}
+\footnotesize
+\begin{tabular}{@{}lrrrrrll@{}}
 \toprule
-Measure & Depth & Raw & Matched & Null B $p$ & Held-out & Depth stability \\
+Measure & Depth & Raw & Matched & Null B $p$ & Held-out & Stab. & Verdict \\
 \midrule
-\code{attn\_correct\_minus\_stale} & 22 & $0.994$ & $0.973$ & $<10^{-4}$ & $0.970$ & \yes{$90\%$} \\
-\code{jlens\_margin}\prov          & 5  & $0.958$ & $0.888$ & $<10^{-4}$ & $0.882$ & \yes{$96\%$} \\
-\code{logitlens\_margin}           & 18 & $0.690$ & $0.703$ & $<10^{-4}$ & $0.669$ & \no{$32\%$} \\
+\code{attn\_correct\_minus\_stale} & 22 & $0.994$ & $0.973$ & $<10^{-4}$ & $0.970$ & \yes{$90\%$} & \yes{survives} \\
+\code{jlens\_margin}               & 5  & $0.958$ & $0.888$ & $<10^{-4}$ & $0.882$ & $96\%$ & exploratory, App.~\ref{app:jlens} \\
+\code{logitlens\_margin}           & 18 & $0.690$ & $0.703$ & $<10^{-4}$ & $0.669$ & \no{$32\%$} & \no{fails split-half} \\
 \bottomrule
 \end{tabular}
 \caption{Matched, selection-corrected results. \emph{Depth} is the one
@@ -490,18 +492,17 @@ split-half actually selects; \emph{stability} is the fraction of 500 splits
 selecting it. \emph{Null B $p$} is a max-$T$ permutation $p$-value: 5{,}000
 shuffles of the outcome labels, taking the maximum $|\mathrm{AUC}-0.5|$ over the
 internal band (depths 2--23) inside each shuffle, so it already prices in having
-chosen the best depth. \prov J-lens results are provisional pending replay
-validation (Section~\ref{sec:limits}).}
+chosen the best depth. The J-lens row passes every column and is still marked
+exploratory: the lens fails a convergence check independent of these statistics
+(Section~\ref{sec:limits}, Appendix~\ref{app:jlens}).}
 \label{tab:survive}
 \end{table}
 
-Table~\ref{tab:survive} gives the matched, selection-corrected picture. Two
-measures survive all three controls. Attention mass differential at depth 22
-separates the groups with matched AUC $0.973$ and held-out $0.970$, selecting
-depth 22 in $90\%$ of splits; failures place more mass on the stale anchor and
-less on the update mention. J-lens margin at depth 5 gives matched $0.888$,
-held-out $0.882$, depth 5 selected in $96\%$ of splits, replicating at $0.883$
-against the larger matched control set in the three-depth run.
+Table~\ref{tab:survive} gives the matched, selection-corrected picture.
+Attention mass differential at depth 22 separates the groups with matched
+AUC $0.973$ and held-out $0.970$, selecting depth 22 in $90\%$ of splits;
+failures place more mass on the stale anchor and less on the update mention. It
+is the one measure that survives every control.
 
 \textbf{Logit-lens margin does not survive.} It clears Null B, but the depth it
 selects is reproducible in only $32\%$ of splits, spreading across depths 12, 16,
@@ -539,39 +540,30 @@ in failures.}
 \label{sec:limits}
 % =============================================================================
 
-\paragraph{J-lens validity is unresolved; its results are provisional.}
-The probe ships a self-check that replays the truncated stack from depth 0 and
-compares against the real forward pass. \textbf{It was not enabled for any of the
-three runs behind this paper} --- all three configurations record
-\code{self\_check: false}. We therefore have no replay validation for the J-lens
-numbers reported here, and we label them provisional. A separate diagnostic
-invocation of the self-check on bfloat16 did exceed the check's own threshold;
-that output was not committed and could not be reproduced without GPU access, so
-we report it here only as a further reason for the provisional label and cite no
-number from it. Auditing that code for this
-paper also surfaced two defects, now fixed: the failure branch compared
-\code{diff > 0.5}, and since \code{nan > 0.5} is false in IEEE 754, a run whose
-logits went non-finite printed ``OK''; and the docstring named a tolerance of
-$\sim$$10^{-1}$ while the code used $0.5$. We additionally note that
-$\max|\Delta\text{logit}|$ over a $152{,}064$-token vocabulary can be dominated by
-a deep-tail token carrying no probability mass, so the check now also reports KL
-between the two softmaxes. A dtype-ladder diagnostic exists
-(Appendix~\ref{app:jlens}) but has not been run. Until it is, the depth-5 J-lens
-result should be read as provisional. The attention result does not depend on
-J-lens.
-
-\paragraph{What J-lens measures even if valid.} By construction
-$f_\ell$ executes decoder layers $\ell..28$ with the real KV cache, so J-lens at
-depth 5 includes the entire downstream network. We tested whether this makes it a
-disguised readout of the output and found it is not. On the matched groups, the
-depth-specific component alone --- after removing each example's cross-depth
-mean --- still gives AUC $0.871$ at depth 5 against a matched $0.888$, and
-cross-depth rank correlation is markedly \emph{lower} for J-lens ($0.268$) than
-for the logit lens ($0.538$), which is the opposite of what a shared
-output-driven component would produce. The licensed statement is nonetheless
-``decodable \emph{through the remaining network}'', not ``represented at depth
-5''. Under the logit lens, which does not route through downstream layers,
-matched internal AUC is $0.57$--$0.62$ everywhere: no usable internal signal.
+\paragraph{Why the J-lens result is exploratory.} J-lens is a first-order Taylor
+expansion, about the baseline $b=0$, of the model's own remaining computation:
+$\mathrm{jlens}_\ell = f_\ell(0) + J h_\ell$, with $f_\ell$ running decoder layers
+$\ell \ldots 28$. A lens of that definition is pinned at one end. As
+$\ell \to 28$ there is less and less computation left to expand --- at the final
+depth $f_{28}$ is just the norm and the unembedding --- so a faithful first-order
+readout must approach the model's own output distribution. It does not.
+Figure~\ref{fig:depthjlens} shows the divergence, and it is stark in the one
+place the answer is known: in a stale-output failure the token the model emits is
+by construction its own rank-1 token, and the logit lens, being the model's norm
+and unembedding, ranks it $1$ in $100\%$ of failures at depth 28. J-lens places
+that same token at median rank $74{,}329$ at depth 26 and $61{,}842$ at depth 27,
+deep in the tail of a $152{,}064$-token vocabulary, and recovers rank 1 at depth
+28 in only $71.5\%$ of failures. An expansion that does not approach the function
+it expands, at the end of the stack where the expansion is nearly exact, is not
+behaving as a readout of the remaining network. We therefore read the depth-5
+J-lens margin as a fixed, untrained linear functional $J(0)\,h_5$ of the residual
+state that separates the matched groups (AUC $0.888$, held-out $0.882$) --- a
+real and reproducible separation, but not evidence about what the remaining
+network would do with $h_5$. It is reported as exploratory, and the surviving
+attention result does not depend on it. Auditing the probe's self-check for this
+paper also surfaced two defects, now fixed: a non-finite comparison passed
+silently because \code{nan > 0.5} is false in IEEE 754, and the docstring named a
+tolerance the code did not use.
 
 \paragraph{Statistical power.} The matched full-depth comparison rests on 72
 successes. The three-depth run supplies 682 matched successes but only at depths
@@ -649,8 +641,10 @@ twelve failures inside the 500-record run, an avoidable loss of power.
 \begin{figure}[h]
 \centering
 \includegraphics[width=\textwidth]{../../reports/depth_profile_matched_jlens.pdf}
-\caption{As Figure~\ref{fig:depth}, under J-lens. Provisional pending replay
-validation.}
+\caption{As Figure~\ref{fig:depth}, under J-lens. Note the behaviour at depths
+26--27, where almost no computation remains to expand: a faithful first-order
+readout would be converging on the model's output there, and this one is not.
+See Section~\ref{sec:limits} and Appendix~\ref{app:jlens}.}
 \label{fig:depthjlens}
 \end{figure}
 For contrast only, the same internal-band mean gaps computed on the
@@ -666,7 +660,11 @@ For each of the 137 failures, patch attention-head outputs at depths 19--22 from
 a condition-matched success in the same cell, and measure the rate at which the
 output flips to the correct room. The target heads are the top-ranked
 ones from the per-head analysis in Section~\ref{sec:results}, which concentrate
-in depths 19--22. Controls: random heads at the same depths;
+in depths 19--22. That ranking lives in \code{reports/head\_ranking.csv}, a
+committed artifact produced by \code{analyze\_heads.py}; it is derived from the
+per-(depth, head) attention tensors, which are not included in the supplementary
+archive because of their size, but the ranking itself and the script that
+produces it both are. Controls: random heads at the same depths;
 heads ranked lowest by the same committed head ranking; and mean-ablation of the
 top-$k$ stale-preferring heads. A patch applied at the decision token can
 transfer the donor's answer outright, which is answer-copying rather than
@@ -674,23 +672,42 @@ localization; the donor-mismatch control detects this. Metrics and corruption
 choices follow \citet{zhang2024patching}. Script: \code{patch\_probe.py}.
 \textbf{Not run: no GPU was available.}
 
-\section{J-lens replay diagnostic}
+\section{The J-lens linearization gap}
 \label{app:jlens}
-\code{jlens\_diag.py} runs bf16 and fp16 arms plus a small-model dtype ladder and
-computes KL between the replayed and real softmaxes in both directions.
-\textbf{It remains unrun: no CUDA device was available for this work}, and the
-one diagnostic invocation the authors did perform (Section~\ref{sec:limits}) was
-not committed, so nothing from it is cited.
+Section~\ref{sec:limits} demotes the J-lens result because the lens fails a
+convergence check that follows from its own definition. This appendix states
+what would actually diagnose it.
 
-What running it would settle. If fp32 gives KL on the order of $10^{-4}$ while
-bf16 is order 1 at the same tolerance, the discrepancy is numerical precision in
-the replay rather than a fault in the truncated stack, and the depth-5 J-lens
-result loses its provisional label. If instead the KL stays large in fp32, the
-truncated stack does not faithfully reproduce the model and every J-lens number
-in this paper must be withdrawn --- the attention results, which do not depend on
-J-lens, would be unaffected either way. The repaired self-check
-(Section~\ref{sec:limits}) should be run on a fixed seeded set of at least 20
-records at the same time, so the two agree on a single tolerance.
+\paragraph{The right diagnostic is the linearization error, not the replay.}
+$\mathrm{jlens}_\ell = f_\ell(0) + J h_\ell$ approximates $f_\ell(h_\ell)$ by a
+first-order expansion about $b = 0$. The quantity that governs whether it is a
+readout of the remaining network is therefore the per-depth discrepancy between
+$f_\ell(h_\ell)$ --- the true output of running layers $\ell \ldots 28$ on the
+real activation --- and $\mathrm{jlens}_\ell$. Measuring it for every $\ell$, as a
+KL between the two softmaxes rather than a max logit difference, would say
+directly how far the expansion is from the function, and where. We have not run
+that measurement; it needs a GPU.
+
+Figure~\ref{fig:depthjlens} answers the question qualitatively and, for the
+purposes of this paper, sufficiently. Because $b = 0$ is far from the real
+activation, the expansion is being evaluated well outside any radius in which a
+first-order term dominates, and the residual $f_\ell(h_\ell) - \mathrm{jlens}_\ell$
+is large enough at $\ell = 26, 27$ to move the model's own argmax token into the
+tail of the vocabulary. A baseline nearer the data --- the previous depth's
+activation, which the probe already supports --- would be the first thing to try.
+
+\paragraph{What the dtype ladder would and would not settle.} The probe ships a
+replay self-check, and a diagnostic (\code{jlens\_diag.py}) that runs it across
+dtypes. Neither bears on the above. The self-check validates that the
+\emph{truncated stack} reproduces the model, that is, that $f_\ell$ is computed
+correctly; the dtype ladder asks whether any discrepancy there is numerical
+precision. Both concern the replay. The convergence failure documented here is a
+property of the \emph{expansion}, and would survive an exactly faithful $f_\ell$
+computed in double precision. We therefore do not treat running the ladder as
+open work for this result. For completeness: the self-check was not enabled for
+any of the three runs (all three configurations record
+\code{self\_check: false}), and a separate diagnostic invocation on bfloat16 that
+exceeded the check's threshold was not committed, so no number from it is cited.
 
 \section{Reproduction}
 \label{app:repro}

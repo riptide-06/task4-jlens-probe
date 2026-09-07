@@ -438,6 +438,61 @@ print("""
 """)
 
 
+# ============================================ 4c. DOES J-LENS CONVERGE TO THE MODEL?
+hr("4c. J-LENS CONVERGENCE CHECK (a validity test the decomposition cannot do)")
+print("""
+jlens_L = f_L(0) + J.h_L is a first-order Taylor expansion of the model's own
+remaining computation about the baseline b = 0. Whatever else such a lens does,
+it is pinned at one end: as L -> 28 there is less and less remaining computation
+to expand, and at the final depth f_28 is just norm + unembed. A faithful
+first-order readout must therefore converge to the model's actual output
+distribution as L -> 28.
+
+This is testable with no GPU. In a stale-output failure the model EMITS the stale
+room, so the model's rank-1 token at the output IS the stale token. The logit
+lens at depth 28 is definitionally the model's own norm+unembed, so it must rank
+that token 1. We ask whether J-lens does the same, and how it behaves just below.
+""")
+_f = fail
+print(f"  Rank assigned to the token the model actually emitted (n={_f.example_id.nunique()} failures)\n")
+print(f"  {'depth':>5} | {'logit lens':>21} | {'J-lens':>21} | {'frac at rank 1':>16}")
+print(f"  {'':>5} | {'median':>10} {'mean':>10} | {'median':>10} {'mean':>10} | {'logit':>7} {'jlens':>8}")
+print("  " + "-" * 74)
+# 1-based ranks, so the largest attainable rank is the vocabulary size.
+VOCAB = int(fail[[f"{_l}_rank_{_w}" for _l in ("logitlens", "jlens")
+                  for _w in ("correct", "stale")]].max().max())
+conv = []
+for L in range(20, 29):
+    d = _f[_f.layer == L]
+    row = dict(depth=L,
+               logit_median=float(d.logitlens_rank_stale.median()),
+               logit_mean=float(d.logitlens_rank_stale.mean()),
+               jlens_median=float(d.jlens_rank_stale.median()),
+               jlens_mean=float(d.jlens_rank_stale.mean()),
+               logit_frac_rank1=float((d.logitlens_rank_stale == 1).mean()),
+               jlens_frac_rank1=float((d.jlens_rank_stale == 1).mean()))
+    conv.append(row)
+    print(f"  {L:>5} | {row['logit_median']:>10,.0f} {row['logit_mean']:>10,.0f} | "
+          f"{row['jlens_median']:>10,.0f} {row['jlens_mean']:>10,.0f} | "
+          f"{100*row['logit_frac_rank1']:>6.1f}% {100*row['jlens_frac_rank1']:>7.1f}%")
+pd.DataFrame(conv).to_csv(os.path.join(REPORTS, "jlens_convergence.csv"), index=False)
+print(f"""
+  Reading: the logit lens converges as it must -- median rank 1 by depth 27 and
+  rank 1 in 100% of failures at depth 28. J-LENS DOES NOT. At depths 26 and 27,
+  where almost no computation remains to expand, it places the model's own
+  argmax token at median rank {conv[6]['jlens_median']:,.0f} and {conv[7]['jlens_median']:,.0f}
+  -- deep in the tail of a {VOCAB:,}-token vocabulary. Even at depth 28 it recovers
+  rank 1 in only {100*conv[8]['jlens_frac_rank1']:.1f}% of failures against the logit lens's 100%.
+
+  A first-order expansion that does not approach the function it expands, at the
+  end of the stack where the expansion is nearly exact, is not behaving as a
+  readout of the remaining network. The depth-5 J-lens margin should therefore be
+  read as a fixed untrained linear functional of h_5 that happens to separate the
+  matched groups -- not as evidence about what the remaining network would do
+  with h_5. Saved -> reports/jlens_convergence.csv
+""")
+
+
 # ==================================================================== 5. PLOTS
 # Okabe-Ito colorblind-safe palette, shared with sim/existence_null_sim.py.
 CB = {"blue": "#0072B2", "orange": "#E69F00", "green": "#009E73",
