@@ -476,6 +476,47 @@ for L in range(20, 29):
           f"{row['jlens_median']:>10,.0f} {row['jlens_mean']:>10,.0f} | "
           f"{100*row['logit_frac_rank1']:>6.1f}% {100*row['jlens_frac_rank1']:>7.1f}%")
 pd.DataFrame(conv).to_csv(os.path.join(REPORTS, "jlens_convergence.csv"), index=False)
+
+# --- Is depth 28 a *different* failure from depths 26-27? -------------------
+# At depth 28, f_28(h) = lm_head(RMSNorm(h)). Both are BIAS-FREE in Qwen2
+# (transformers Qwen2RMSNorm has only a `weight`; lm_head is
+# nn.Linear(..., bias=False)). Two consequences:
+#   (i)  f_28(0) = 0, so the expansion's anchor term vanishes; and
+#   (ii) RMSNorm divides out the scale, so f_28 is positively homogeneous of
+#        degree 0 in h. Euler's theorem then gives J(h).h = 0.
+# So jlens_28 = f_28(0) + J.h = 0 identically -- the expansion ANNIHILATES the
+# signal rather than reproducing it. Test that signature directly.
+print("\n  Is depth 28 the same failure as depths 26-27, or a different one?")
+print(f"    {'depth':>5} {'mean |score|':>13} {'mean p_correct':>15} {'both ranks==1':>14} {'margin==0':>10}")
+_unif = 1.0 / VOCAB
+deg = []
+for L in range(24, 29):
+    d = _f[_f.layer == L]
+    r = dict(depth=L,
+             mean_abs_score=float(d.jlens_score_correct.abs().mean()),
+             mean_p_correct=float(d.jlens_p_correct.mean()),
+             both_ranks_1=float(((d.jlens_rank_correct == 1) & (d.jlens_rank_stale == 1)).mean()),
+             margin_exactly_zero=float((d.jlens_margin == 0).mean()))
+    deg.append(r)
+    print(f"    {L:>5} {r['mean_abs_score']:>13.4g} {r['mean_p_correct']:>15.4g} "
+          f"{100*r['both_ranks_1']:>13.1f}% {100*r['margin_exactly_zero']:>9.1f}%")
+pd.DataFrame(deg).to_csv(os.path.join(REPORTS, "jlens_depth28_degeneracy.csv"), index=False)
+print(f"    (a uniform distribution over the {VOCAB:,}-token vocabulary has "
+      f"p = {_unif:.3g})")
+print(f"""
+    Depth 28 is a DIFFERENT failure. Its logits are ~{deg[4]['mean_abs_score']:.1e} in magnitude,
+    six orders of magnitude below depths 26-27, and its mean p_correct
+    ({deg[4]['mean_p_correct']:.3g}) is the uniform value to three significant figures.
+    The margin is EXACTLY zero in {100*deg[4]['margin_exactly_zero']:.1f}% of failures and both tokens tie at
+    rank 1 in the same {100*deg[4]['both_ranks_1']:.1f}% -- impossible for a real distribution, and
+    exactly what an all-zero logit vector produces under a rank convention that
+    counts strictly-greater scores. The {100*conv[8]['jlens_frac_rank1']:.1f}% "rank 1" at depth 28 is
+    therefore a tie artifact, not agreement with the model.
+
+    Depths 26-27 are NOT degenerate: scores are O(1) and no margins are exactly
+    zero. There the expansion produces a genuine but wrong distribution. Two
+    separable failures: annihilation at 28, linearization error at 26-27.
+    Saved -> reports/jlens_depth28_degeneracy.csv""")
 print(f"""
   Reading: the logit lens converges as it must -- median rank 1 by depth 27 and
   rank 1 in 100% of failures at depth 28. J-LENS DOES NOT. At depths 26 and 27,

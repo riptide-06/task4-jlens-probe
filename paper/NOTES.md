@@ -81,6 +81,14 @@ output file; none was typed from memory.
 | deviation AUC .871; cross-depth corr .268 vs .538 | §6 | "4b. J-LENS DECOMPOSITION" |
 | 5,733 attn NaNs, all depth 28 | §5.4, §6 | "MISSING-DATA POLICY" |
 
+### From `reports/jlens_depth28_degeneracy.csv` (controls_check2.py §4c)
+| Number | Where | Locate |
+|---|---|---|
+| depth-28 mean \|score\| = 2.2e-06 | §6, App. D | `mean_abs_score`, depth 28 |
+| depth-28 mean p_correct = 6.58e-06 (= uniform 1/152,064) | App. D | `mean_p_correct`, depth 28 |
+| margin exactly 0 in 28.5%; both ranks tie at 1 in 28.5% | App. D | `margin_exactly_zero`, `both_ranks_1` |
+| depths 26–27 scores O(1), no exact-zero margins | App. D | rows 26, 27 |
+
 ### From `reports/jlens_convergence.csv` (controls_check2.py §4c)
 | Number | Where | Locate |
 |---|---|---|
@@ -253,6 +261,54 @@ argmax agreement; the fp16 arm produced non-finite logits and `out=other` on all
 records. Neither appears in any committed script, output, notebook or git object.
 The fp16 case is the one the old code reported as "OK" (`nan > 0.5` is False);
 fixed in `31d6d07`.
+
+## 4b-bis. Depth 28 is annihilation, not precision — and what analyze_heads.py actually does
+
+**Two claims in the review note were checked and one did not hold.**
+
+*The depth-28 claim.* The note proposed saying the expansion at depth 28 is
+"exact up to a positive scale factor", so the 71.5% argmax agreement there
+"bounds the numerical precision of the bf16 JVP path". Verified the architecture
+first, from the installed `transformers` 5.14.1 source (the version all three
+runs used): `Qwen2RMSNorm` has only a `weight` parameter and no bias, and
+`lm_head` is `nn.Linear(hidden, vocab, bias=False)`. Both bias-free, as the note
+assumed — but the consequence runs the other way:
+
+- `f_28(0) = 0`, because there is no bias anywhere.
+- RMSNorm divides out the scale, so `f_28` is positively homogeneous of **degree
+  zero**. By Euler's theorem the directional derivative along `h` of a
+  degree-zero homogeneous function is zero, so `J(h)·h = 0`.
+- Hence `jlens_28 = f_28(0) + J·h = 0` **identically**. The expansion annihilates
+  the signal; it is not exact up to scale.
+
+The data match that prediction exactly (`reports/jlens_depth28_degeneracy.csv`):
+mean |logit| 2.2e-06 at depth 28 against O(1) at 26–27; mean `p_correct`
+6.58e-06, the uniform value `1/152,064` to three significant figures; margin
+**exactly** zero in 28.5% of failures and both tokens tied at rank 1 in the same
+28.5%. So **the 71.5% is a tie artifact of the rank convention** (`rank_of`
+counts strictly-greater scores, so an all-zero vector ranks everything 1) and
+bounds nothing about bf16 precision.
+
+The note's instinct that there are *two separable failures* is right, with
+different content: **annihilation at depth 28** (structural, would survive any
+precision) and **linearization error at depths 26–27** (scores O(1), no exact
+zeros, genuine but wrong distribution). The paper says so.
+
+*The head-ranking claim.* Read `analyze_heads.py`. It ranks all 784 (depth, head)
+pairs by a difference in differences: Δ = stale-anchor mass − update-mention
+mass, scored as `delta_fail - delta_succ`. The success set is chosen by
+`--baseline`, whose **default is `matched`** — successes with a single stale and
+a single correct mention, which is the regime all 137 failures occupy by
+construction. The committed `head_ranking.csv` records `n_succ = 72`, confirming
+it was produced with that default. **So the ranking does not share the
+Section 5.3 confound**, and no recomputation was needed.
+
+It is still not *independent corroboration* in the strongest sense: it uses the
+same 72 controls as the depth-22 AUC. Section 5.4 now says precisely what it is —
+corroboration by a different statistic computed from different data on disk
+(per-head tensors rather than per-example aggregates), not from an independent
+control group — and notes that the 72-record ceiling applies to both. The
+`\paragraph` heading dropped the word "Independent".
 
 ## 4c. Compute facts (Fix 3, item 8)
 

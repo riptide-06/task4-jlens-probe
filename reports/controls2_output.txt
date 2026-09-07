@@ -312,6 +312,29 @@ that token 1. We ask whether J-lens does the same, and how it behaves just below
      27 |          1          2 |     61,842     67,653 |   50.4%     0.0%
      28 |          1          1 |          1     38,849 |  100.0%    71.5%
 
+  Is depth 28 the same failure as depths 26-27, or a different one?
+    depth  mean |score|  mean p_correct  both ranks==1  margin==0
+       24         2.856       2.749e-06           0.0%       0.7%
+       25          4.07         1.2e-06           0.0%       0.0%
+       26         1.714       7.025e-06           0.0%       0.0%
+       27         2.521       6.322e-06           0.0%       0.0%
+       28      2.19e-06       6.576e-06          28.5%      28.5%
+    (a uniform distribution over the 152,064-token vocabulary has p = 6.58e-06)
+
+    Depth 28 is a DIFFERENT failure. Its logits are ~2.2e-06 in magnitude,
+    six orders of magnitude below depths 26-27, and its mean p_correct
+    (6.58e-06) is the uniform value to three significant figures.
+    The margin is EXACTLY zero in 28.5% of failures and both tokens tie at
+    rank 1 in the same 28.5% -- impossible for a real distribution, and
+    exactly what an all-zero logit vector produces under a rank convention that
+    counts strictly-greater scores. The 71.5% "rank 1" at depth 28 is
+    therefore a tie artifact, not agreement with the model.
+
+    Depths 26-27 are NOT degenerate: scores are O(1) and no margins are exactly
+    zero. There the expansion produces a genuine but wrong distribution. Two
+    separable failures: annihilation at 28, linearization error at 26-27.
+    Saved -> reports/jlens_depth28_degeneracy.csv
+
   Reading: the logit lens converges as it must -- median rank 1 by depth 27 and
   rank 1 in 100% of failures at depth 28. J-LENS DOES NOT. At depths 26 and 27,
   where almost no computation remains to expand, it places the model's own

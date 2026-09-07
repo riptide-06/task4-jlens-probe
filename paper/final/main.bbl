@@ -1,0 +1,87 @@
+\begin{thebibliography}{15}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Belinkov(2022)]{belinkov2022probing}
+Yonatan Belinkov.
+\newblock Probing classifiers: Promises, shortcomings, and advances.
+\newblock \emph{Computational Linguistics}, 2022.
+
+\bibitem[Belrose et~al.(2023)Belrose, Ostrovsky, McKinney, Furman, Smith, Halawi, Biderman, and Steinhardt]{belrose2023tunedlens}
+Nora Belrose, Igor Ostrovsky, Lev McKinney, Zach Furman, Logan Smith, Danny Halawi, Stella Biderman, and Jacob Steinhardt.
+\newblock Eliciting latent predictions from transformers with the tuned lens.
+\newblock \emph{arXiv preprint arXiv:2303.08112}, 2023.
+
+\bibitem[Gelman and Loken(2014)]{gelman2014forking}
+Andrew Gelman and Eric Loken.
+\newblock The statistical crisis in science.
+\newblock \emph{American Scientist}, 102\penalty0 (6):\penalty0 460, 2014.
+
+\bibitem[Geva et~al.(2022)Geva, Caciularu, Wang, and Goldberg]{geva2022ffn}
+Mor Geva, Avi Caciularu, Kevin~Ro Wang, and Yoav Goldberg.
+\newblock Transformer feed-forward layers build predictions by promoting concepts in the vocabulary space.
+\newblock In \emph{Proceedings of EMNLP 2022}, 2022.
+
+\bibitem[Hewitt and Liang(2019)]{hewitt2019control}
+John Hewitt and Percy Liang.
+\newblock Designing and interpreting probes with control tasks.
+\newblock In \emph{Proceedings of EMNLP 2019}, 2019.
+
+\bibitem[Kriegeskorte et~al.(2009)Kriegeskorte, Simmons, Bellgowan, and Baker]{kriegeskorte2009circular}
+Nikolaus Kriegeskorte, W.~Kyle Simmons, Patrick S.~F. Bellgowan, and Chris~I. Baker.
+\newblock Circular analysis in systems neuroscience: The dangers of double dipping.
+\newblock \emph{Nature Neuroscience}, 12\penalty0 (5):\penalty0 535--540, 2009.
+\newblock \doi{10.1038/nn.2303}.
+
+\bibitem[Meng et~al.(2022)Meng, Bau, Andonian, and Belinkov]{meng2022rome}
+Kevin Meng, David Bau, Alex Andonian, and Yonatan Belinkov.
+\newblock Locating and editing factual associations in {GPT}.
+\newblock In \emph{Advances in Neural Information Processing Systems (NeurIPS)}, 2022.
+
+\bibitem[Nichols and Holmes(2002)]{nichols2002permutation}
+Thomas~E. Nichols and Andrew~P. Holmes.
+\newblock Nonparametric permutation tests for functional neuroimaging: A primer with examples.
+\newblock \emph{Human Brain Mapping}, 15\penalty0 (1):\penalty0 1--25, 2002.
+\newblock \doi{10.1002/hbm.1058}.
+
+\bibitem[{nostalgebraist}(2020)]{nostalgebraist2020logitlens}
+{nostalgebraist}.
+\newblock Interpreting {GPT}: The logit lens.
+\newblock LessWrong, August 2020.
+\newblock URL \url{https://www.lesswrong.com/posts/AcKRB8wDpdaN6v6ru/interpreting-gpt-the-logit-lens}.
+
+\bibitem[Orgad et~al.(2024)Orgad, Toker, Gekhman, Reichart, Szpektor, Kotek, and Belinkov]{orgad2024llmsknow}
+Hadas Orgad, Michael Toker, Zorik Gekhman, Roi Reichart, Idan Szpektor, Hadas Kotek, and Yonatan Belinkov.
+\newblock {LLM}s know more than they show: On the intrinsic representation of {LLM} hallucinations.
+\newblock \emph{arXiv preprint arXiv:2410.02707}, 2024.
+
+\bibitem[Ravichander et~al.(2021)Ravichander, Belinkov, and Hovy]{ravichander2021probing}
+Abhilasha Ravichander, Yonatan Belinkov, and Eduard Hovy.
+\newblock Probing the probing paradigm: Does probing accuracy entail task relevance?
+\newblock In \emph{Proceedings of EACL 2021}, 2021.
+
+\bibitem[Wang et~al.(2022)Wang, Variengien, Conmy, Shlegeris, and Steinhardt]{wang2022ioi}
+Kevin Wang, Alexandre Variengien, Arthur Conmy, Buck Shlegeris, and Jacob Steinhardt.
+\newblock Interpretability in the wild: A circuit for indirect object identification in {GPT-2} small.
+\newblock \emph{arXiv preprint arXiv:2211.00593}, 2022.
+
+\bibitem[Westfall and Young(1993)]{westfall1993resampling}
+Peter~H. Westfall and S.~Stanley Young.
+\newblock \emph{Resampling-Based Multiple Testing: Examples and Methods for $p$-Value Adjustment}.
+\newblock Wiley, New York, 1993.
+\newblock ISBN 978-0471557616.
+
+\bibitem[Yom~Din et~al.(2024)Yom~Din, Karidi, Choshen, and Geva]{yomdin2024jump}
+Alexander Yom~Din, Taelin Karidi, Leshem Choshen, and Mor Geva.
+\newblock Jump to conclusions: Short-cutting transformers with linear transformations.
+\newblock In \emph{Proceedings of LREC-COLING 2024}, 2024.
+
+\bibitem[Zhang and Nanda(2024)]{zhang2024patching}
+Fred Zhang and Neel Nanda.
+\newblock Towards best practices of activation patching in language models: Metrics and methods.
+\newblock In \emph{International Conference on Learning Representations (ICLR)}, 2024.
+
+\end{thebibliography}
