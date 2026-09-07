@@ -384,6 +384,43 @@ the last unmapped number in the paper.
 
 The audit is repeatable; the extraction is a dozen lines and is described above.
 
+## 4f. Where the original claim lived, and how it is described
+
+The paper critiques a claim that is **not in the published literature**. It came
+from an unpublished internal analysis of this dataset, done by us for a separate
+project, never submitted or circulated beyond the authors. There is therefore
+nothing to cite, and the previous draft's silence would have sent readers hunting
+for a reference that does not exist and left the impression that the checklist
+was the only place the provenance appeared.
+
+The intro now says so in one paragraph: not in the published literature, nothing
+to cite, ours, never circulated, no other group's result at issue — and that this
+is what makes the case usable, since we hold the dataset, probe, run configs and
+per-depth outputs rather than a description of someone else's method.
+
+Two related wording decisions:
+- **"withdraw", not "retract".** A result never entered into the record cannot be
+  retracted from it. Changed at both occurrences.
+- **No reference to the separate project.** Naming it, even as "a companion
+  manuscript", risks deanonymization and adds nothing a reviewer needs.
+
+## 4g. Build-conditional text (and a build.sh bug it exposed)
+
+Checklist item 5 and Appendix F both said "this anonymized build", which is false
+in `main_named.pdf`. The first fix made them `\ifanon`-conditional — which
+promptly failed `build.sh`, correctly, because the two builds then differed
+outside the whitelist. Rather than widen the whitelist (it is a safety mechanism
+and should stay minimal), both passages were reworded so that **one wording is
+true in both builds**: the URL and the assistant model are "withheld here and
+will be added at camera-ready", which holds regardless of build.
+
+That episode surfaced a genuine bug in `build.sh`. The venue assertion did
+`txt=$(pdftotext "$pdf" -)` and grepped the variable. **Command substitution
+truncates at the first NUL byte**, so once the extracted text grew past one, the
+haystack was silently shortened and the assertion failed on a PDF that plainly
+contained the string. It now extracts to a file and greps the file. Verified by
+negative control that the assertion still fires when the override is removed.
+
 ## 5. Unverified references
 
 **None.** All 15 entries in `refs.bib` were verified on 2026-09-06 against arXiv

@@ -56,6 +56,8 @@
 \definecolor{bad}{HTML}{D55E00}
 \definecolor{good}{HTML}{0072B2}
 \newcommand{\code}[1]{\texttt{\small #1}}
+% Visible placeholder marker; appears only in the non-anonymized build.
+\newcommand{\todo}[1]{\textcolor{bad}{\textbf{[TODO: #1]}}}
 \newcommand{\no}[1]{\textcolor{bad}{\textbf{#1}}}
 \newcommand{\yes}[1]{\textcolor{good}{\textbf{#1}}}
 
@@ -151,9 +153,17 @@ This paper makes that argument concretely and then applies it. The case study is
 our own earlier analysis. We had reported that in 137 of 137 stale-state
 tracking failures, the correct state outranks the stale state in at least one
 internal depth, and had drawn the encoded-but-unused conclusion. We now report
-that this does not survive controls, and we retract it. We treat this as the
-natural test case precisely because we know exactly how the number was produced
-and can re-derive every figure from committed scripts.
+that this does not survive controls, and we withdraw it.
+
+That claim is not in the published literature and there is nothing to cite for
+it: it comes from an unpublished internal analysis of this dataset, carried out
+by us for a separate project and never submitted or circulated beyond the
+authors. We state this so that no reader goes looking for a reference, and so
+that it is clear no other group's result is at issue. It is also what makes the
+case usable: because the analysis was ours, we have the dataset, the probe, the
+run configurations and the per-depth outputs, and can re-derive every figure in
+this paper from committed scripts rather than from a description of someone
+else's method.
 
 \paragraph{Contributions.}
 \begin{enumerate}[leftmargin=*,itemsep=1pt,topsep=2pt]
@@ -472,7 +482,7 @@ over the internal band the mean gap (stale rank minus correct rank, so positive
 favours the correct token) is $-16{,}569$ in failures against $+9{,}242$ in
 matched successes: through most of the stack of a failure the stale token is
 \emph{better} ranked than the correct one, which is the opposite of what the
-retracted claim asserted. Depth 22 is where the ordering starts to move, which is
+withdrawn claim asserted. Depth 22 is where the ordering starts to move, which is
 also where the surviving attention signal sits.
 
 \subsection{What survives}
@@ -815,7 +825,8 @@ The analysis, controls and this manuscript were developed with the assistance of
 a large language model acting as a coding and analysis assistant. All statistical
 procedures were specified by the authors; all code and results are reproducible
 from the committed scripts, and every number in the paper is traceable to a
-script output file. No model or vendor names are given in this build.
+script output file. The specific assistant model and vendor are withheld here and
+will be named at camera-ready.
 
 \ifchecklist
 \newpage

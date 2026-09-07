@@ -36,7 +36,7 @@ say() { printf '%s\n' "$*"; }
 die() { printf '%s%s%s\n' "$RED" "$*" "$RST" >&2; exit "${2:-1}"; }
 
 AUX="*.aux *.log *.out *.bbl *.blg *.toc *.fls *.fdb_latexmk"
-clean() { rm -f $AUX a.raw b.raw a.norm b.norm 2>/dev/null; }
+clean() { rm -f $AUX a.raw b.raw a.norm b.norm notice_check.txt 2>/dev/null; }
 
 set_anon() {  # $1 = true|false
   if [ "$1" = "true" ]; then
@@ -151,14 +151,21 @@ say "${YEL}== asserting the venue notice ==${RST}"
 DEFAULT_NOTICE='Conference on Neural Information Processing Systems'
 VENUE=$(sed -nE 's/^\\newcommand\{\\venuename\}\{(.*)\}$/\1/p' main.tex | head -1)
 VENUE_PLAIN=$(printf '%s' "$VENUE" | sed 's/---/—/g')
+# NB: extract to a FILE and grep the file. Capturing pdftotext output into a
+# shell variable truncates at the first NUL byte in the extracted text, which
+# silently shortens the haystack and produced a spurious failure here once the
+# paper grew past the first NUL.
 for pdf in main.pdf main_named.pdf; do
-  txt=$(pdftotext "$pdf" - 2>/dev/null)
-  if printf '%s' "$txt" | grep -qF "$DEFAULT_NOTICE"; then
+  pdftotext "$pdf" notice_check.txt 2>/dev/null
+  if grep -qF "$DEFAULT_NOTICE" notice_check.txt; then
+    rm -f notice_check.txt
     die "[$pdf] contains the style's default NeurIPS notice; the \\@noticestring override is not in effect" 3
   fi
-  if ! printf '%s' "$txt" | grep -qF "$VENUE_PLAIN"; then
+  if ! grep -qF "$VENUE_PLAIN" notice_check.txt; then
+    rm -f notice_check.txt
     die "[$pdf] does not contain the current \\venuename value ($VENUE_PLAIN)" 3
   fi
+  rm -f notice_check.txt
   say "  [$pdf] notice ok: no default NeurIPS string; venue present"
 done
 
