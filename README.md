@@ -1,29 +1,41 @@
-# Task 4 — J-Lens Stale-State Probe for Qwen2.5-7B-Instruct
+# J-Lens stale-state probe for Qwen2.5-7B-Instruct
 
-**Team:** tommy-hjra · Algoverse AI Research, Summer 2026
-**Axis:** 2 — State Tracking and Belief Update in Long-Horizon Tasks
+Algoverse AI Research, summer 2026, team tommy-hjra, axis 2 (state tracking and belief update in long-horizon tasks).
 
-Mechanistic-interpretability pipeline that reads Qwen2.5-7B-Instruct internal activations at the
-moment it answers *"what room is the object in now?"* and asks whether the **correct,
-updated** room is decodable inside the network **even on the trials where the model emits
-the stale room**.
+A mechanistic-interpretability pipeline that reads Qwen2.5-7B-Instruct's internal activations at the moment it answers "what room is the subject in now?" and asks whether the correct, updated room is decodable inside the network even on the trials where the model emits the stale room. It consumes the JSONL written by [Synthetic-Data-Generator](https://github.com/riptide-06/Synthetic-Data-Generator) directly: same field names, same invariants, no conversion step.
 
 ```
-representation failure  ->  correct state never appears at any depth
-retrieval    failure    ->  correct state is decodable mid-stack, then loses at the top
+not encoded          ->  the correct state never appears at any depth
+encoded but unused   ->  the correct state is decodable mid-stack, then loses at the top
 ```
 
-Consumes the `.jsonl` produced by `../stale-state-data-generator/` directly — same field
-names, same invariants, no conversion step.
+## What I built
 
----
+- `jlens_probe.py`: the pipeline, usable as a module and as a CLI. Two lenses (the logit lens and a Jacobian lens implemented from its definition), residual-stream and attention hooks, a truncated-stack replay that makes each probe one token through the remaining layers, and a self-check that replays from layer 0 against the model's real logits.
+- `analyze_results.py`: offline analysis of behaviour, encoded-versus-unused, the depth profile, and attention.
+- `analyze_heads.py`: per-(layer, head) attention attribution for the failure population, with `reports/head_ranking.csv` and `reports/heatmap.png`.
+- `qwen3_jlens_colab.ipynb`: the Colab driver.
+- `reports/Task 4 Online Verification Report.md`: the verified GPU runs and what they showed.
+
+## Results in this repo
+
+Three verified A100 runs are committed under `outputs/`: the full 5,000-record behavioural baseline on layers 5, 8, and 13; a shuffled 500-record all-layer sweep; and an all-layer sweep of every stale-output failure. The model emits the stale room on 137 of 5,000 records, all of them level-3 agent records, and for all 137 both lenses find at least one internal layer where the correct room outranks the stale one. Probing only three key layers instead of all 28 cut the per-record cost from about 3.5 s to about 0.6 s, which took the full-dataset sweep from about five hours to under an hour. The matched attention comparison and the corrections to the earlier offline report are in the verification report.
+
+## How it was verified
+
+- `test_offline.py`: 46 checks over every non-GPU code path. Run it after any edit.
+- `--dry-run` checks tokenisation and readout positions with no GPU.
+- `--self-check` replays from layer 0 and compares against the model's real logits; the verified runs report a maximum logit difference around 0.004 and a correlation of 0.999998.
+- Each run's `config.json` records `jlens_mode_used`, the mode actually used rather than the one requested, so a silent fallback to finite differences is detectable after the fact.
+
+The reference sections below cover files, quickstart, the verified GPU configuration, method, outputs, cost, and caveats.
 
 ## Files
 
 | file | what it is |
 |---|---|
 | `jlens_probe.py` | the pipeline. Importable module *and* CLI. |
-| `qwen3_jlens_colab.ipynb` | Colab driver — GPU check, install, dry run, probe, analysis, download. |
+| `qwen3_jlens_colab.ipynb` | Colab driver: GPU check, install, dry run, probe, analysis, download. |
 | `analyze_results.py` | offline analysis: behaviour, encode-vs-retrieve, depth profile, attention. |
 | `test_offline.py` | 46 assertions over every non-GPU code path. Run it after any edit. |
 | `data/sample_probe_input.jsonl` | 35 rows stratified over level × compression × entity_type, so the pipeline runs out of the box. |
@@ -41,7 +53,7 @@ A100, upload `jlens_probe.py`, `analyze_results.py` and your `.jsonl`, run the c
 ```bash
 pip install "transformers>=4.51.0" accelerate bitsandbytes pandas matplotlib
 
-# 0. no GPU needed — check tokenisation and readout positions first
+# 0. no GPU needed: check tokenisation and readout positions first
 python jlens_probe.py --jsonl data/sample_probe_input.jsonl --dry-run
 
 # 1. the probe
@@ -54,7 +66,7 @@ python jlens_probe.py \
 python analyze_results.py outputs/run1 --plot
 ```
 
-`transformers >= 4.51.0` is a hard requirement — that release added the Qwen3 architecture.
+`transformers >= 4.51.0` is a hard requirement: that release added the Qwen3 architecture.
 
 ---
 
@@ -78,7 +90,7 @@ python3 -u jlens_probe.py \
 > ### ⚠️ `--load-in bf16` and `--attn-impl eager` are load-bearing
 >
 > **`--load-in 4bit` and `--attn-impl sdpa` both break the autograd JVP and fall back to
-> finite differences.** The run still completes and still writes J-Lens columns — but they
+> finite differences.** The run still completes and still writes J-Lens columns, but they
 > are the noisier finite-difference estimate, not the exact Jacobian, so numbers from such
 > a run are **not** comparable to a `--jlens-mode autograd` run.
 >
@@ -93,7 +105,7 @@ python3 -u jlens_probe.py \
 > grep jlens_mode_used outputs/<name>/config.json
 > ```
 >
-> A one-line fallback warning is also printed to stdout the first time it happens — easy to
+> A one-line fallback warning is also printed to stdout the first time it happens, which is easy to
 > miss in a long Colab log, which is why `config.json` is the authority.
 
 ### CLI gotchas
@@ -102,8 +114,8 @@ python3 -u jlens_probe.py \
 |---|---|
 | the subsample flag is **`--limit`** | not `--max-records`. |
 | `analyze_results.py` takes the run dir | `python analyze_results.py --plot <run_dir>` |
-| **`staleness_5k.jsonl` is ordered by complexity level** | the file is exactly three contiguous blocks — rows 0–1666 are level 1, 1667–3333 level 2, 3334–4999 level 3. A bare `--limit 500` therefore samples **100 % level-1** rows. Always pair it with `--shuffle`: `--limit 500 --shuffle`. |
-| **`staleness_5k.jsonl` has no compression variation** | all 5000 rows are `compression=none` (also `distractor_role=auto` throughout, and `distractor_position` only `none`/`middle`). Runs over this file cannot speak to the compression axis at all — regenerate with `--compression mixed` in `stale-state-data-generator` before making any claim about it. |
+| **`staleness_5k.jsonl` is ordered by complexity level** | the file is exactly three contiguous blocks: rows 0-1666 are level 1, 1667-3333 level 2, 3334-4999 level 3. A bare `--limit 500` therefore samples **100 % level-1** rows. Always pair it with `--shuffle`: `--limit 500 --shuffle`. |
+| **`staleness_5k.jsonl` has no compression variation** | all 5000 rows are `compression=none` (also `distractor_role=auto` throughout, and `distractor_position` only `none`/`middle`). Runs over this file cannot speak to the compression axis at all: regenerate with `--compression mixed` in `stale-state-data-generator` before making any claim about it. |
 
 ---
 
@@ -137,7 +149,7 @@ two rooms' first tokens.
 
 Let `resid[i]` be the residual stream entering decoder layer `i` at position `t`
 (`resid[0]` = embeddings, `resid[L]` = last layer output), and let `f_i` be the model's own
-remaining computation — layers `i..L-1`, final RMSNorm, `lm_head` — evaluated at `t` with
+remaining computation (layers `i..L-1`, final RMSNorm, `lm_head`) evaluated at `t` with
 the real, frozen KV cache of positions `< t`.
 
 **Logit lens** (baseline)
@@ -170,23 +182,23 @@ retained. Output is in logit units, directly comparable to the logit lens.
 
 > **Naming.** "J-Lens" has no canonical public implementation, so the projection is
 > implemented here from the definition above rather than imported. It is isolated in
-> `jacobian_lens()` (see `LENS_REGISTRY`) — swap that one function if the team standardises
+> `jacobian_lens()` (see `LENS_REGISTRY`): swap that one function if the team standardises
 > on a different formulation, and nothing else changes.
 
 ### Hooks
 
 | what | mechanism | why this way |
 |---|---|---|
-| residual stream | `register_forward_pre_hook` on every `layers[i]` — a pre-hook's input **is** `resid[i]`; a post-hook on the last layer supplies `resid[L]` | the hook slices column `t` immediately, so memory is `O(L × d)` not `O(L × T × d)`; `output_hidden_states=True` would keep the whole sequence |
+| residual stream | `register_forward_pre_hook` on every `layers[i]`: a pre-hook's input **is** `resid[i]`; a post-hook on the last layer supplies `resid[L]` | the hook slices column `t` immediately, so memory is `O(L × d)` not `O(L × T × d)`; `output_hidden_states=True` would keep the whole sequence |
 | attention scores | `register_forward_hook` on every `layers[i].self_attn`, keeping `output[1]` | weights only exist under the **eager** kernel (sdpa/flash fuse the softmax and return `None`), so the pass runs inside `eager_attention()`, which flips `config._attn_implementation` for that pass only |
 | truncated stack | `TruncatedStack.forward_from(i, h, cache, t)` calls `layers[i:]` by hand | makes each J-Lens probe **one token** through ≤ L layers instead of a full re-run |
 
 Two properties make the single-token replay exact rather than approximate:
 
 1. **Causality.** Perturbing position `t` cannot change positions `< t`, so their cached
-   keys/values are valid unchanged — that is why the prefix cache can be frozen and reused.
+   keys/values are valid unchanged: that is why the prefix cache can be frozen and reused.
 2. **Query length 1.** A lone query at the end of the sequence legitimately attends to every
-   cached key, so `attention_mask=None` is correct under every kernel — no causal-mask
+   cached key, so `attention_mask=None` is correct under every kernel: no causal-mask
    plumbing, and the captured attention tensor is `[1, H, 1, t+1]` (~19 MB at 8k context)
    instead of the `[1, H, T, T]` blow-up that `output_attentions=True` over a full long
    prompt would cost.
@@ -205,7 +217,7 @@ J-Lens numbers should not be trusted.
 
 ## Outputs
 
-### `layers.csv` — one row per (example, depth). The main analysis table.
+### `layers.csv`: one row per (example, depth). The main analysis table.
 
 | column | meaning |
 |---|---|
@@ -216,12 +228,12 @@ J-Lens numbers should not be trusted.
 | `logitlens_score_*`, `_p_*`, `_margin`, `_top1_token` | logit, softmax prob, correct−stale gap, argmax token |
 | `jlens_*` | the same six under J-Lens |
 | `attn_correct_mass` / `attn_stale_mass` | attention from the readout position onto **all** mentions of each room, averaged over heads |
-| `attn_correct_update_mass` | mass on the **last** mention of the correct room — i.e. the update event |
-| `attn_stale_anchor_mass` | mass on the **first** mention of the stale room — i.e. the original anchor |
+| `attn_correct_update_mass` | mass on the **last** mention of the correct room: i.e. the update event |
+| `attn_stale_anchor_mass` | mass on the **first** mention of the stale room: i.e. the original anchor |
 | `attn_max_head_correct` / `_stale`, `attn_argmax_head_correct` | strongest single head, and which one |
 | `attn_entropy` | entropy of the head-averaged attention row |
 
-### `examples.csv` — one row per example
+### `examples.csv`: one row per example
 
 Everything above collapsed, plus the behavioural result (`final_p_correct`, `final_rank_stale`, …)
 and the summary statistics:
@@ -234,9 +246,9 @@ and the summary statistics:
 | `{lens}_n_layers_correct_wins` | how many depths correct outranked stale |
 | `{lens}_best_margin`, `_best_margin_layer` | largest correct−stale logit gap and where |
 
-### `heads.csv` (`--dump-heads`) — one row per (example, layer, head)
+### `heads.csv` (`--dump-heads`): one row per (example, layer, head)
 
-### `records.jsonl` — everything, including the per-depth top-k vocabulary and the exact prompt text
+### `records.jsonl`: everything, including the per-depth top-k vocabulary and the exact prompt text
 
 ---
 
@@ -277,7 +289,7 @@ because only the KV-cache read scales with `T`.
 | situation | flag |
 |---|---|
 | T4 (16 GB, no bf16) | `--load-in 4bit` (≈5.5 GB) |
-| A100 | `--load-in bf16` — also enables the exact `autograd` J-Lens |
+| A100 | `--load-in bf16`: also enables the exact `autograd` J-Lens |
 | too slow | `--layers 0-36:2` or `0-36:4` to probe fewer depths |
 | memory pressure | `--no-attention`, or drop `--dump-heads` |
 | target one condition | `--filter-compression aggressive --filter-level 3` |
@@ -295,7 +307,7 @@ because only the KV-cache read scales with `T`.
   truncation error against cancellation noise.
 * **Linearisation.** J-Lens is a *first-order* readout. It reports what the downstream
   network does to small changes around the true activation, which is not the same as what a
-  full nonlinear patch would do. Causal confirmation still needs activation patching — the
+  full nonlinear patch would do. Causal confirmation still needs activation patching: the
   natural next step, and the layers J-Lens flags are where to patch.
 * **Correlational.** Both lenses are decoding, not intervention. "Decodable at layer 22"
   does not by itself prove the model *could* have used it.
